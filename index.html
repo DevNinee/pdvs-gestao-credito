@@ -184,7 +184,7 @@
         <div class="bg-white shadow-lg w-full max-w-md border border-rustic-300 rounded-2xl flex flex-col">
             <div class="bg-gray-100 px-4 py-3 border-b border-rustic-200 flex justify-between items-center">
                 <h3 id="modal-title" class="font-bold text-gray-800 text-sm uppercase tracking-wide">Título</h3>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-red-600 transition-colors"></button>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-red-600 transition-colors font-bold text-lg">X</button>
             </div>
             <div id="modal-body" class="p-4">
                 <!-- Conteúdo dinâmico -->
@@ -219,6 +219,43 @@
         };
 
         const formatMoney = (value) => Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let borderColor = 'border-gray-200';
+            let textColor = 'text-gray-800';
+            
+            if (type === 'success') {
+                borderColor = 'border-green-500';
+                textColor = 'text-green-700';
+            } else if (type === 'error') {
+                borderColor = 'border-red-500';
+                textColor = 'text-red-700';
+            } else if (type === 'warning') {
+                borderColor = 'border-orange-500';
+                textColor = 'text-orange-700';
+            }
+
+            toast.className = `bg-white p-3 rounded-2xl border-l-4 shadow-md transition-all duration-300 transform translate-x-full opacity-0 ${borderColor} ${textColor}`;
+            toast.innerHTML = `<span class="font-bold text-sm">${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
 
         function renderDashboard() {
             document.getElementById('dash-vendas').innerText = formatMoney(state.totalVendasDia);
@@ -280,8 +317,8 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-sm font-mono text-gray-800">${formatMoney(subtotal)}</span>
-                        <button onclick="removeFromCart(${index})" class="text-gray-400 hover:text-red-600 transition-colors">
-                            </button>
+                        <button onclick="removeFromCart(${index})" class="text-gray-400 hover:text-red-600 transition-colors font-bold">
+                            X</button>
                     </div>
                 `;
                 container.appendChild(div);
