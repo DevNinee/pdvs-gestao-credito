@@ -1,0 +1,58 @@
+/* Design mais flat e focado em produtividade */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #fcfaf8;
+    border-left: 1px solid #f0eadd;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d4c4a8;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #8c6b4a;
+}
+
+.tab-active {
+    border-top: 3px solid #c25e1a;
+    background-color: white;
+    color: #2b1d12;
+    font-weight: 600;
+    border-left: 1px solid #f0eadd;
+    border-right: 1px solid #f0eadd;
+    border-bottom: 1px solid transparent;
+    margin-bottom: -1px;
+}
+
+.tab-inactive {
+    color: #666;
+    background-color: #fcfaf8;
+    border: 1px solid transparent;
+    border-bottom: 1px solid #f0eadd;
+}
+
+.tab-inactive:hover {
+    color: #2b1d12;
+    background-color: #f0eadd;
+}
+
+@media (min-width: 1024px) {
+    .desktop-app-height {
+        height: calc(100vh - 72px);
+    }
+
+    .panel-scroll {
+        overflow-y: auto;
+    }
+}
+
+/* Remove spinners numéricos de inputs de número para visual mais limpo */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
