@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PDVs - Gestão de Vendas</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Fonte única, mais limpa e focada em sistemas -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        rustic: {
+                            50: '#fcfaf8',
+                            100: '#f0eadd',
+                            300: '#d4c4a8',
+                            600: '#8c6b4a',
+                            800: '#4a3320',
+                            900: '#2b1d12',
+                            accent: '#c25e1a',
+                            accentHover: '#a34e15',
+                            success: '#346343',
+                            danger: '#8f3333',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-[#f4f2ef] text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-rustic-900 text-white border-b-4 border-rustic-accent sticky top-0 z-20">
+        <div
+            class="max-w-[1400px] mx-auto px-4 py-2 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
+            <div class="flex flex-col w-full sm:w-auto text-center sm:text-left">
+                <h1
+                    class="text-xl sm:text-2xl font-bold tracking-tight flex items-center justify-center sm:justify-start gap-2">
+                    PDVs
+                </h1>
+                <span class="text-[10px] sm:text-xs text-rustic-300 uppercase tracking-wider font-semibold">Gestão de
+                    Vendas e Controle de Crédito</span>
+            </div>
+
+            <div class="flex gap-2 sm:gap-4 w-full sm:w-auto">
+                <div
+                    class="bg-rustic-800 px-4 py-1.5 rounded-2xl flex-1 sm:flex-none flex items-center justify-between sm:justify-start gap-3 border border-rustic-600/50">
+                    <span class="text-xs text-rustic-300 uppercase font-semibold">Caixa Hoje</span>
+                    <span class="font-mono font-bold text-green-400 text-sm sm:text-base" id="dash-vendas">R$
+                        0,00</span>
+                </div>
+                <div
+                    class="bg-rustic-800 px-4 py-1.5 rounded-2xl flex-1 sm:flex-none flex items-center justify-between sm:justify-start gap-3 border border-rustic-600/50">
+                    <span class="text-xs text-rustic-300 uppercase font-semibold">Fiado Ativo</span>
+                    <span class="font-mono font-bold text-red-400 text-sm sm:text-base" id="dash-fiado">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-[1400px] mx-auto w-full p-2 sm:p-4 flex flex-col lg:flex-row gap-4 desktop-app-height">
+
+        <!-- CAIXA RÁPIDO (Esquerda) -->
+        <section
+            class="w-full lg:w-[55%] flex flex-col bg-white border border-rustic-300 shadow-sm flex-1 panel-scroll">
+            <div
+                class="bg-gray-100 px-4 py-2 border-b border-rustic-300 flex justify-between items-center sticky top-0 z-10">
+                <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Terminal de Vendas</h2>
+            </div>
+
+            <div class="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2 overflow-y-auto max-h-[35vh] lg:max-h-72 bg-gray-50 border-b border-rustic-300"
+                id="pdv-products">
+                <!-- Produtos populados via JS -->
+            </div>
+
+            <div class="flex-1 flex flex-col min-h-[300px]">
+                <div class="px-4 py-2 bg-white border-b border-rustic-200 flex justify-between items-center">
+                    <span class="text-xs font-bold text-gray-500 uppercase">Itens da Comanda</span>
+                    <button onclick="clearCart()"
+                        class="text-xs text-rustic-danger hover:text-red-700 font-semibold px-2 py-1 border border-transparent hover:border-red-200 hover:bg-red-50 rounded-2xl transition-colors">Limpar</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-2 bg-white" id="cart-items">
+                    <!-- Itens do carrinho -->
+                </div>
+
+                <div class="p-4 bg-gray-50 border-t border-rustic-300">
+                    <div class="flex justify-between items-end mb-4 bg-white p-3 border border-rustic-200 rounded-2xl">
+                        <span class="text-sm font-bold text-gray-600 uppercase">Total a Pagar</span>
+                        <span class="text-2xl font-mono font-bold text-rustic-success" id="cart-total">R$ 0,00</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Cliente Vinculado</label>
+                        <select id="cart-client"
+                            class="w-full p-2 border border-rustic-300 rounded-2xl focus:outline-none focus:border-rustic-accent focus:ring-1 focus:ring-rustic-accent bg-white text-sm">
+                            <option value="">-- Cliente Avulso (Venda Padrão) --</option>
+                            <!-- Clientes populados via JS -->
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="checkout('PAGO')"
+                            class="bg-rustic-success hover:bg-[#2a5036] text-white py-3 rounded-2xl text-sm font-bold uppercase tracking-wide transition-colors flex items-center justify-center gap-2">
+                            Receber (Pago)
+                        </button>
+                        <button onclick="checkout('FIADO')"
+                            class="bg-rustic-danger hover:bg-[#7a2a2a] text-white py-3 rounded-2xl text-sm font-bold uppercase tracking-wide transition-colors flex items-center justify-center gap-2">
+                            Pendurar (Fiado)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GESTÃO (Direita) -->
+        <section
+            class="w-full lg:w-[45%] flex flex-col bg-white border border-rustic-300 shadow-sm flex-1 mt-2 lg:mt-0">
+            <div class="flex bg-gray-50 pt-2 px-2 border-b border-rustic-300 sticky top-0 z-10">
+                <button onclick="switchTab('fiados')" id="tab-btn-fiados"
+                    class="px-4 py-2 tab-active text-sm uppercase tracking-wide whitespace-nowrap">Caderneta</button>
+                <button onclick="switchTab('estoque')" id="tab-btn-estoque"
+                    class="px-4 py-2 tab-inactive text-sm uppercase tracking-wide whitespace-nowrap">Estoque</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 panel-scroll">
+
+                <!-- ABA FIADOS -->
+                <div id="tab-fiados" class="block space-y-4">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                        <h3 class="text-sm font-bold text-gray-700 uppercase">Gestão de Inadimplência</h3>
+                        <button onclick="openModal('newClient')"
+                            class="text-xs bg-gray-800 hover:bg-black text-white px-3 py-1.5 rounded-2xl transition-colors">
+                            Adicionar
+                        </button>
+                    </div>
+                    <div id="clients-list" class="space-y-2">
+                        <!-- Clientes populados via JS -->
+                    </div>
+                </div>
+
+                <!-- ABA ESTOQUE -->
+                <div id="tab-estoque" class="hidden space-y-4">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                        <h3 class="text-sm font-bold text-gray-700 uppercase">Controle de Inventário</h3>
+                        <button onclick="openModal('newProduct')"
+                            class="text-xs bg-gray-800 hover:bg-black text-white px-3 py-1.5 rounded-2xl transition-colors">
+                            Adicionar
+                        </button>
+                    </div>
+
+                    <div class="border border-rustic-200 rounded-2xl overflow-hidden">
+                        <table class="w-full text-left border-collapse bg-white text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-700 border-b border-rustic-200">
+                                    <th class="p-2 font-semibold">Item</th>
+                                    <th class="p-2 font-semibold">Valor</th>
+                                    <th class="p-2 font-semibold text-center">Qtd</th>
+                                    <th class="p-2 font-semibold text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-list" class="divide-y divide-gray-100">
+                                <!-- Produtos populados via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white shadow-lg w-full max-w-md border border-rustic-300 rounded-2xl flex flex-col">
+            <div class="bg-gray-100 px-4 py-3 border-b border-rustic-200 flex justify-between items-center">
+                <h3 id="modal-title" class="font-bold text-gray-800 text-sm uppercase tracking-wide">Título</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-red-600 transition-colors"></button>
+            </div>
+            <div id="modal-body" class="p-4">
+                <!-- Conteúdo dinâmico -->
+            </div>
+            <div id="modal-footer"
+                class="bg-gray-50 px-4 py-3 border-t border-rustic-200 flex justify-end gap-2 shrink-0">
+                <!-- Botões dinâmicos -->
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-auto max-w-sm pointer-events-none">
+    </div>
+
+    <script>
+        let state = {
+            products: [
+                { id: 1, name: 'Cerveja Lata 350ml', price: 4.50, stock: 48 },
+                { id: 2, name: 'Refrigerante 2L', price: 9.00, stock: 15 },
+                { id: 3, name: 'Pão Francês', price: 0.80, stock: 100 },
+                { id: 4, name: 'Leite Integral 1L', price: 5.50, stock: 24 },
+                { id: 5, name: 'Café em Pó 500g', price: 18.00, stock: 0 },
+                { id: 6, name: 'Óleo de Soja', price: 8.50, stock: 5 }
+            ],
+            clients: [
+                { id: 1, name: 'Joãozinho (Mecânico)', debt: 45.00 },
+                { id: 2, name: 'Dona Maria', debt: 12.50 },
+                { id: 3, name: 'Seu Zé (Pedreiro)', debt: 0.00 }
+            ],
+            cart: [],
+            totalVendasDia: 125.00
+        };
+
+        const formatMoney = (value) => Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        function renderDashboard() {
+            document.getElementById('dash-vendas').innerText = formatMoney(state.totalVendasDia);
+            const totalFiado = state.clients.reduce((acc, client) => acc + client.debt, 0);
+            document.getElementById('dash-fiado').innerText = formatMoney(totalFiado);
+        }
+
+        function renderPDVProducts() {
+            const container = document.getElementById('pdv-products');
+            container.innerHTML = '';
+
+            state.products.forEach(p => {
+                const isOutOfStock = p.stock <= 0;
+                const stockWarning = isOutOfStock ? 'text-red-500 font-bold' : (p.stock <= 5 ? 'text-orange-600 font-bold' : 'text-gray-500');
+                const cardStyle = isOutOfStock
+                    ? 'opacity-50 bg-gray-100 border-gray-200 cursor-not-allowed'
+                    : 'bg-white border-rustic-200 hover:border-rustic-accent hover:bg-[#fff9f5] cursor-pointer';
+
+                const btn = document.createElement('div');
+                btn.className = `border rounded-2xl p-2 flex flex-col justify-between transition-colors ${cardStyle}`;
+                btn.onclick = () => {
+                    if (!isOutOfStock) addToCart(p.id);
+                    else showToast(`${p.name} está sem estoque!`, 'error');
+                };
+
+                btn.innerHTML = `
+                    <span class="font-medium text-xs text-gray-800 leading-tight mb-2">${p.name}</span>
+                    <div class="flex justify-between items-end mt-auto">
+                        <span class="text-rustic-800 font-mono font-bold text-sm">${formatMoney(p.price)}</span>
+                        <span class="text-[10px] ${stockWarning}">${isOutOfStock ? 'Esgotado' : `${p.stock} un`}</span>
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const totalContainer = document.getElementById('cart-total');
+            container.innerHTML = '';
+
+            if (state.cart.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 mt-8 text-sm">Nenhum item adicionado</div>`;
+                totalContainer.innerText = formatMoney(0);
+                return;
+            }
+
+            let total = 0;
+            state.cart.forEach((item, index) => {
+                const subtotal = item.product.price * item.quantity;
+                total += subtotal;
+
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center py-2 px-2 border-b border-gray-100 hover:bg-gray-50';
+                div.innerHTML = `
+                    <div class="flex-1 pr-2">
+                        <div class="font-medium text-xs text-gray-800">${item.product.name}</div>
+                        <div class="text-[10px] text-gray-500 font-mono">${item.quantity}x ${formatMoney(item.product.price)}</div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-sm font-mono text-gray-800">${formatMoney(subtotal)}</span>
+                        <button onclick="removeFromCart(${index})" class="text-gray-400 hover:text-red-600 transition-colors">
+                            </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            totalContainer.innerText = formatMoney(total);
+        }
+
+        function renderClientSelect() {
+            const select = document.getElementById('cart-client');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">-- Cliente Avulso (Venda Padrão) --</option>';
+            state.clients.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.name} ${c.debt > 0 ? `(Deve ${formatMoney(c.debt)})` : ''}</option>`;
+            });
+            if (currentValue) select.value = currentValue;
+        }
+
+        function renderStock() {
+            const tbody = document.getElementById('stock-list');
+            tbody.innerHTML = '';
+            state.products.forEach(p => {
+                const tr = document.createElement('tr');
+                const stockColor = p.stock <= 5 ? (p.stock === 0 ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800') : 'bg-green-100 text-green-800';
+
+                tr.className = "hover:bg-gray-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-2 text-xs text-gray-800 font-medium">${p.name}</td>
+                    <td class="p-2 text-xs font-mono text-gray-600">${formatMoney(p.price)}</td>
+                    <td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded-2xl text-[10px] font-bold ${stockColor}">${p.stock}</span></td>
+                    <td class="p-2 text-center">
+                        <button onclick="openReporEstoqueModal(${p.id})" class="text-rustic-accent hover:text-rustic-accentHover text-xs font-semibold uppercase tracking-wide">Repor</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderClients() {
+            const container = document.getElementById('clients-list');
+            container.innerHTML = '';
+
+            const sortedClients = [...state.clients].sort((a, b) => b.debt - a.debt);
+
+            sortedClients.forEach(c => {
+                const hasDebt = c.debt > 0;
+                const div = document.createElement('div');
+                div.className = 'bg-white p-3 border border-gray-200 rounded-2xl flex justify-between items-center hover:border-gray-300 transition-colors';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm">${c.name}</div>
+                        <div class="text-xs mt-0.5">
+                            ${hasDebt
+                        ? `<span class="text-rustic-danger font-bold font-mono">Débito: ${formatMoney(c.debt)}</span>`
+                        : `<span class="text-gray-400 font-medium">Zero dívidas</span>`}
+                        </div>
+                    </div>
+                    ${hasDebt ? `
+                        <button onclick="openPayDebtModal(${c.id})" class="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 px-3 py-1.5 rounded-2xl text-xs font-bold transition-colors">
+                            Quitar
+                        </button>
+                    ` : ``}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addToCart(productId) {
+            const product = state.products.find(p => p.id === productId);
+            const cartItem = state.cart.find(item => item.product.id === productId);
+            const currentCartQty = cartItem ? cartItem.quantity : 0;
+
+            if (currentCartQty >= product.stock) {
+                showToast(`Estoque limite atingido (${product.stock} un).`, 'warning');
+                return;
+            }
+
+            if (cartItem) cartItem.quantity++;
+            else state.cart.push({ product, quantity: 1 });
+
+            renderCart();
+        }
+
+        function removeFromCart(index) {
+            state.cart.splice(index, 1);
+            renderCart();
+        }
+
+        function clearCart() {
+            state.cart = [];
+            document.getElementById('cart-client').value = "";
+            renderCart();
+        }
+
+        function checkout(type) {
+            if (state.cart.length === 0) {
+                showToast('Comanda vazia.', 'error');
+                return;
+            }
+
+            const clientId = document.getElementById('cart-client').value;
+            const total = state.cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+
+            if (type === 'FIADO' && !clientId) {
+                showToast('Selecione um cliente para pendurar o valor.', 'error');
+                return;
+            }
+
+            state.cart.forEach(cartItem => {
+                const product = state.products.find(p => p.id === cartItem.product.id);
+                product.stock -= cartItem.quantity;
+            });
+
+            if (type === 'PAGO') {
+                state.totalVendasDia += total;
+                showToast(`Venda concluída: ${formatMoney(total)}`, 'success');
+            } else if (type === 'FIADO') {
+                const client = state.clients.find(c => c.id == clientId);
+                client.debt += total;
+                showToast(`Adicionado ${formatMoney(total)} na conta de ${client.name}`, 'success');
+            }
+
+            clearCart();
+            updateAllViews();
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tab-fiados').classList.add('hidden');
+            document.getElementById('tab-estoque').classList.add('hidden');
+            document.getElementById('tab-btn-fiados').classList.replace('tab-active', 'tab-inactive');
+            document.getElementById('tab-btn-estoque').classList.replace('tab-active', 'tab-inactive');
+
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tab}`).classList.replace('tab-inactive', 'tab-active');
+        }
+
+        function updateAllViews() {
+            renderDashboard();
+            renderPDVProducts();
+            renderCart();
+            renderStock();
+            renderClients();
+            renderClientSelect();
+        }
+
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalFooter = document.getElementById('modal-footer');
+
+        function closeModal() {
+            modalOverlay.classList.add('hidden');
+        }
+
+        function openModal(action) {
+            modalOverlay.classList.remove('hidden');
+
+            if (action === 'newClient') {
+                modalTitle.innerText = 'Novo Cliente';
+                modalBody.innerHTML = `
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nome</label>
+                    <input type="text" id="new-client-name" class="w-full p-2 border border-gray-300 rounded-2xl focus:outline-none focus:border-rustic-accent text-sm" placeholder="Ex: Maria da Padaria">
+                `;
+                modalFooter.innerHTML = `
+                    <button onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-2xl text-sm font-medium">Cancelar</button>
+                    <button onclick="saveNewClient()" class="px-4 py-2 bg-rustic-800 hover:bg-black text-white rounded-2xl text-sm font-bold">Salvar Cliente</button>
+                `;
+                setTimeout(() => document.getElementById('new-client-name').focus(), 100);
+            }
+            else if (action === 'newProduct') {
+                modalTitle.innerText = 'Novo Produto';
+                modalBody.innerHTML = `
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Descrição</label>
+                            <input type="text" id="new-prod-name" class="w-full p-2 border border-gray-300 rounded-2xl focus:outline-none focus:border-rustic-accent text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Preço (R$)</label>
+                                <input type="number" step="0.01" min="0" id="new-prod-price" class="w-full p-2 border border-gray-300 rounded-2xl focus:outline-none focus:border-rustic-accent text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Estoque</label>
+                                <input type="number" min="0" id="new-prod-stock" class="w-full p-2 border border-gray-300 rounded-2xl focus:outline-none focus:border-rustic-accent text-sm" value="0">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                modalFooter.innerHTML = `
+                    <button onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-2xl text-sm font-medium">Cancelar</button>
+                    <button onclick="saveNewProduct()" class="px-4 py-2 bg-rustic-800 hover:bg-black text-white rounded-2xl text-sm font-bold">Salvar Produto</button>
+                `;
+                setTimeout(() => document.getElementById('new-prod-name').focus(), 100);
+            }
+        }
+
+        function openReporEstoqueModal(productId) {
+            const product = state.products.find(p => p.id === productId);
+            modalTitle.innerText = `Entrada de Estoque`;
+            modalBody.innerHTML = `
+                <div class="mb-4">
+                    <span class="block text-xs text-gray-500 uppercase">Produto</span>
+                    <strong class="text-sm text-gray-800">${product.name}</strong>
+                </div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Quantidade Adquirida</label>
+                <input type="number" id="add-stock-qty" class="w-full p-2 border border-gray-300 rounded-2xl text-sm focus:outline-none focus:border-rustic-accent" min="1" value="1">
+            `;
+            modalFooter.innerHTML = `
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-2xl text-sm font-medium">Cancelar</button>
+                <button onclick="confirmReporEstoque(${productId})" class="px-4 py-2 bg-rustic-success hover:bg-[#2a5036] text-white rounded-2xl text-sm font-bold">Confirmar Entrada</button>
+            `;
+            modalOverlay.classList.remove('hidden');
+            setTimeout(() => document.getElementById('add-stock-qty').focus(), 100);
+        }
+
+        function confirmReporEstoque(productId) {
+            const qtyInput = document.getElementById('add-stock-qty').value;
+            const qty = parseInt(qtyInput);
+            if (qty > 0) {
+                const product = state.products.find(p => p.id === productId);
+                product.stock += qty;
+                updateAllViews();
+                closeModal();
+                showToast(`Estoque atualizado: +${qty}`, 'success');
+            } else {
+                showToast('Quantidade inválida.', 'error');
+            }
+        }
+
+        function openPayDebtModal(clientId) {
+            const client = state.clients.find(c => c.id === clientId);
+            modalTitle.innerText = `Baixa de Título`;
+            modalBody.innerHTML = `
+                <div class="flex justify-between items-center mb-4 bg-gray-50 p-3 border border-gray-200 rounded-2xl">
+                    <span class="text-xs text-gray-600 uppercase font-bold">Saldo Devedor</span>
+                    <strong class="text-lg text-rustic-danger font-mono">${formatMoney(client.debt)}</strong>
+                </div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Valor do Pagamento (R$)</label>
+                <input type="number" step="0.01" min="0.01" max="${client.debt}" id="pay-amount" class="w-full p-2 border border-gray-300 rounded-2xl text-sm focus:outline-none focus:border-rustic-accent" value="${client.debt.toFixed(2)}">
+            `;
+            modalFooter.innerHTML = `
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-2xl text-sm font-medium">Cancelar</button>
+                <button onclick="confirmPayment(${clientId})" class="px-4 py-2 bg-rustic-success hover:bg-[#2a5036] text-white rounded-2xl text-sm font-bold">Confirmar Pagamento</button>
+            `;
+            setTimeout(() => document.getElementById('pay-amount').focus(), 100);
+        }
+
+        function confirmPayment(clientId) {
+            const payAmountInput = document.getElementById('pay-amount').value;
+            const amount = parseFloat(payAmountInput);
+            if (!isNaN(amount) && amount > 0) {
+                const client = state.clients.find(c => c.id === clientId);
+                if (amount <= client.debt) {
+                    client.debt -= amount;
+                    state.totalVendasDia += amount; 
+                    updateAllViews();
+                    closeModal();
+                    showToast('Pagamento registrado com sucesso!', 'success');
+                } else {
+                    showToast('Valor maior que a dívida.', 'error');
+                }
+            } else {
+                showToast('Valor inválido.', 'error');
+            }
+        }
+
+        function saveNewClient() {
+            const nameInput = document.getElementById('new-client-name').value.trim();
+            if (nameInput) {
+                const newId = state.clients.length > 0 ? Math.max(...state.clients.map(c => c.id)) + 1 : 1;
+                state.clients.push({ id: newId, name: nameInput, debt: 0 });
+                updateAllViews();
+                closeModal();
+                showToast('Cliente adicionado com sucesso!', 'success');
+            } else {
+                showToast('O nome do cliente é obrigatório.', 'error');
+            }
+        }
+
+        function saveNewProduct() {
+            const nameInput = document.getElementById('new-prod-name').value.trim();
+            const priceInput = parseFloat(document.getElementById('new-prod-price').value);
+            const stockInput = parseInt(document.getElementById('new-prod-stock').value);
+
+            if (nameInput && !isNaN(priceInput) && priceInput >= 0 && !isNaN(stockInput) && stockInput >= 0) {
+                const newId = state.products.length > 0 ? Math.max(...state.products.map(p => p.id)) + 1 : 1;
+                state.products.push({ id: newId, name: nameInput, price: priceInput, stock: stockInput });
+                updateAllViews();
+                closeModal();
+                showToast('Produto adicionado com sucesso!', 'success');
+            } else {
+                showToast('Preencha os campos corretamente.', 'error');
+            }
+        }
+
+        updateAllViews();
+    </script>
+</body>
+
+</html>
