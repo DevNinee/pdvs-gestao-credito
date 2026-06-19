@@ -5,18 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bar da Preta — Gestão</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════════
-       HEADER
-  ═══════════════════════════════════════════ -->
+  <!-- HEADER -->
   <header class="header">
     <div class="header-inner">
 
       <div class="brand">
-        <span class="brand-icon">🍺</span>
+        <span class="brand-icon"></span>
         <div>
           <div class="brand-name">Bar da Preta</div>
           <div class="brand-sub">PDV &amp; Gestão de Estoque</div>
@@ -41,12 +39,10 @@
     </div>
   </header>
 
-  <!-- ═══════════════════════════════════════════
-       MAIN LAYOUT
-  ═══════════════════════════════════════════ -->
+  <!-- MAIN LAYOUT -->
   <main class="main">
 
-    <!-- ─── COLUNA ESQUERDA: PDV ──────────────── -->
+    <!-- COLUNA ESQUERDA: PDV -->
     <div class="col-left">
 
       <!-- Grid de Produtos -->
@@ -158,15 +154,15 @@
           </div>
 
           <div class="cart-actions">
-            <button class="btn-receive">✓ Receber</button>
-            <button class="btn-fiado">📌 Pendurar</button>
+            <button class="btn-receive">Receber</button>
+            <button class="btn-fiado">Pendurar</button>
           </div>
         </div>
       </section>
 
     </div>
 
-    <!-- ─── COLUNA DIREITA: GESTÃO ─────────────── -->
+    <!-- COLUNA DIREITA: GESTÃO -->
     <div class="col-right">
       <section class="panel panel-right">
 
@@ -267,7 +263,7 @@
             <div class="client-card">
               <div class="client-info">
                 <span class="client-name">Joãozinho</span>
-                <span class="client-debt debt-active">📌 Deve R$ 45,00</span>
+                <span class="client-debt debt-active">Deve R$ 45,00</span>
               </div>
               <div class="client-actions">
                 <button class="btn-success-sm">Quitar</button>
@@ -279,7 +275,7 @@
             <div class="client-card">
               <div class="client-info">
                 <span class="client-name">Dona Maria</span>
-                <span class="client-debt debt-active">📌 Deve R$ 12,50</span>
+                <span class="client-debt debt-active">Deve R$ 12,50</span>
               </div>
               <div class="client-actions">
                 <button class="btn-success-sm">Quitar</button>
@@ -291,7 +287,7 @@
             <div class="client-card">
               <div class="client-info">
                 <span class="client-name">Seu Zé</span>
-                <span class="client-debt debt-none">✓ Sem dívidas</span>
+                <span class="client-debt debt-none">Sem dívidas</span>
               </div>
               <div class="client-actions">
                 <button class="btn-edit">Editar</button>
@@ -319,7 +315,7 @@
                 </div>
                 <div class="comanda-right">
                   <div class="comanda-total">R$ 19,00</div>
-                  <div class="comanda-type type-fiado">📌 Fiado</div>
+                  <div class="comanda-type type-fiado">Fiado</div>
                 </div>
               </div>
               <div class="comanda-items">
@@ -336,7 +332,7 @@
                 </div>
                 <div class="comanda-right">
                   <div class="comanda-total">R$ 16,00</div>
-                  <div class="comanda-type type-pago">✓ Pago</div>
+                  <div class="comanda-type type-pago">Pago</div>
                 </div>
               </div>
               <div class="comanda-items">
@@ -352,7 +348,7 @@
                 </div>
                 <div class="comanda-right">
                   <div class="comanda-total">R$ 12,50</div>
-                  <div class="comanda-type type-fiado">📌 Fiado</div>
+                  <div class="comanda-type type-fiado">Fiado</div>
                 </div>
               </div>
               <div class="comanda-items">
@@ -370,9 +366,7 @@
 
   </main>
 
-  <!-- ═══════════════════════════════════════════
-       MODAIS (todos ocultos por padrão)
-  ═══════════════════════════════════════════ -->
+  <!-- MODAIS (todos ocultos por padrão) -->
 
   <!-- Modal: Novo Produto -->
   <div class="modal-overlay" id="modal-new-product">
@@ -502,12 +496,11 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       TOASTS (exemplos estáticos)
-  ═══════════════════════════════════════════ -->
+  <!-- TOASTS (exemplos estáticos) -->
   <div class="toast-container">
     <div class="toast toast-success">Venda concluída: R$ 19,00</div>
   </div>
-<script src="script.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
