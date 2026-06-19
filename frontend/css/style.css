@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════
-   RESET & BASE
-═══════════════════════════════════════════════ */
+// --- RESET & BASE ---
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -26,9 +24,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .hidden { display: none !important; }
 
 
-/* ═══════════════════════════════════════════════
-   HEADER
-═══════════════════════════════════════════════ */
+// --- HEADER ---
 .header {
   background: #111;
   border-bottom: 1px solid #222;
@@ -107,9 +103,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .stat-amber  { color: #f59e0b; }
 
 
-/* ═══════════════════════════════════════════════
-   MAIN LAYOUT
-═══════════════════════════════════════════════ */
+// --- MAIN LAYOUT ---
 .main {
   max-width: 1500px;
   margin: 0 auto;
@@ -132,9 +126,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   PANEL (card container)
-═══════════════════════════════════════════════ */
+// --- PANEL (card container) ---
 .panel {
   background: #141414;
   border: 1px solid #222;
@@ -178,9 +170,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   PRODUCT GRID
-═══════════════════════════════════════════════ */
+// --- PRODUCT GRID ---
 .product-grid {
   padding: 10px;
   display: grid;
@@ -233,9 +223,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   BADGES
-═══════════════════════════════════════════════ */
+// --- BADGES ---
 .badge {
   font-size: 10px;
   font-weight: 700;
@@ -249,9 +237,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .badge-red    { background: #450a0a; color: #f87171; }
 
 
-/* ═══════════════════════════════════════════════
-   CART
-═══════════════════════════════════════════════ */
+// --- CART ---
 .cart-list {
   flex: 1;
   overflow-y: auto;
@@ -388,9 +374,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .btn-fiado:hover { background: #991b1b; }
 
 
-/* ═══════════════════════════════════════════════
-   FORM FIELDS
-═══════════════════════════════════════════════ */
+// --- FORM FIELDS ---
 .field-group {
   display: flex;
   flex-direction: column;
@@ -448,9 +432,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   TABS
-═══════════════════════════════════════════════ */
+// --- TABS ---
 .tabs {
   display: flex;
   border-bottom: 1px solid #222;
@@ -488,9 +470,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .tab-content { flex: 1; overflow-y: auto; }
 
 
-/* ═══════════════════════════════════════════════
-   TAB TOOLBAR
-═══════════════════════════════════════════════ */
+// --- TAB TOOLBAR ---
 .tab-toolbar {
   padding: 12px 14px;
   display: flex;
@@ -508,9 +488,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   STOCK TABLE
-═══════════════════════════════════════════════ */
+// --- STOCK TABLE ---
 .table-wrap { overflow-x: auto; }
 
 .table-head,
@@ -552,9 +530,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   CLIENT LIST
-═══════════════════════════════════════════════ */
+// --- CLIENT LIST ---
 .client-list {
   padding: 10px;
   display: flex;
@@ -597,9 +573,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   COMANDA HISTORY
-═══════════════════════════════════════════════ */
+// --- COMANDA HISTORY ---
 .comanda-list {
   padding: 10px;
   display: flex;
@@ -666,9 +640,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .comanda-line span:last-child { font-family: monospace; }
 
 
-/* ═══════════════════════════════════════════════
-   BUTTONS
-═══════════════════════════════════════════════ */
+// --- BUTTONS ---
 .btn-primary {
   background: #f59e0b;
   color: #111;
@@ -757,9 +729,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .btn-ghost-danger:hover { color: #ef4444; }
 
 
-/* ═══════════════════════════════════════════════
-   MODAL
-═══════════════════════════════════════════════ */
+// --- MODAL ---
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -851,9 +821,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 
 
-/* ═══════════════════════════════════════════════
-   TOASTS
-═══════════════════════════════════════════════ */
+// --- TOASTS ---
 .toast-container {
   position: fixed;
   top: 16px;
