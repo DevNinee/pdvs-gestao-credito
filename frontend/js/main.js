@@ -253,9 +253,23 @@ document.querySelector('.btn-receive').addEventListener('click', async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
   const total = totalCarrinho();
 
+  const select = document.querySelector('.field-select');
+  const clienteNomeSelecionado = select.value.split(' —')[0].trim();
+  
+  let clienteId = null;
+  let clienteNome = 'Avulso';
+
+  if (!clienteNomeSelecionado.startsWith('—') && clienteNomeSelecionado) {
+    const cliente = state.clientes.find(c => c.nome === clienteNomeSelecionado);
+    if (cliente) {
+      clienteId = cliente.id;
+      clienteNome = cliente.nome;
+    }
+  }
+
   try {
 
-    await registrarVenda({ clienteId: null, clienteNome: 'Avulso', tipo: 'pago', itens: montarItensVenda() });
+    await registrarVenda({ clienteId, clienteNome, tipo: 'pago', itens: montarItensVenda() });
 
     state.caixaHoje += total;
     const caixaEl = document.querySelector('.stat-green');
