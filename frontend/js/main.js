@@ -1,39 +1,15 @@
-// --- BarControl — JavaScript de Interações & Animações ---
 
-// Estado global
 const state = {
   produtos: [],
-  clientes: [
-    { id: 1, nome: 'Joãozinho', divida: 45.00 },
-    { id: 2, nome: 'Dona Maria', divida: 12.50 },
-    { id: 3, nome: 'Seu Zé',    divida: 0     },
-  ],
-  historico: [
-    {
-      id: 1, cliente: 'Joãozinho', hora: '14:32', total: 19.00, tipo: 'fiado',
-      itens: [{ desc: '2× Cerveja Lata 350ml', val: 10.00 }, { desc: '1× Vodka Dose', val: 9.00 }]
-    },
-    {
-      id: 2, cliente: 'Avulso', hora: '13:10', total: 16.00, tipo: 'pago',
-      itens: [{ desc: '2× Cerveja Long Neck', val: 16.00 }]
-    },
-    {
-      id: 3, cliente: 'Dona Maria', hora: '11:45', total: 12.50, tipo: 'fiado',
-      itens: [
-        { desc: '1× Cerveja Lata 350ml', val: 5.00 },
-        { desc: '1× Refrigerante Lata',  val: 5.00 },
-        { desc: '1× Água Mineral',       val: 2.50 },
-      ]
-    },
-  ],
-  carrinho: [],     // { produtoId, nome, preco, qty }
+  clientes: [], 
+  historico: [], 
+  carrinho: [],     
   caixaHoje: 320.00,
   editandoProduto: null,
   editandoCliente: null,
   quitandoCliente: null,
 };
 
-// --- UTILITÁRIOS ---
 const fmt = v => `R$ ${v.toFixed(2).replace('.', ',')}`;
 
 function showToast(msg, tipo = 'success') {
@@ -83,7 +59,6 @@ function countUp(el, from, to, prefix = '') {
   requestAnimationFrame(step);
 }
 
-// --- MODAIS ---
 function openModal(id) {
   const overlay = document.getElementById(id);
   overlay.classList.remove('hidden');
@@ -112,14 +87,12 @@ function closeModal(id) {
   overlay.addEventListener('transitionend', () => overlay.classList.add('hidden'), { once: true });
 }
 
-/* Fecha modal ao clicar no overlay */
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeModal(overlay.id);
   });
 });
 
-/* Fecha modal ao clicar em ✕ */
 document.querySelectorAll('.modal-close').forEach(btn => {
   btn.addEventListener('click', () => {
     const overlay = btn.closest('.modal-overlay');
@@ -127,7 +100,6 @@ document.querySelectorAll('.modal-close').forEach(btn => {
   });
 });
 
-/* Botões Cancelar */
 document.querySelectorAll('.btn-outline').forEach(btn => {
   btn.addEventListener('click', () => {
     const overlay = btn.closest('.modal-overlay');
@@ -135,7 +107,6 @@ document.querySelectorAll('.btn-outline').forEach(btn => {
   });
 });
 
-// --- TABS ---
 const tabs = document.querySelectorAll('.tab');
 const views = {
   0: 'view-estoque',
@@ -167,7 +138,6 @@ tabs.forEach((tab, i) => {
   });
 });
 
-// --- CARRINHO ---
 function totalCarrinho() {
   return state.carrinho.reduce((s, i) => s + i.preco * i.qty, 0);
 }
@@ -178,7 +148,6 @@ function renderCarrinho() {
   const oldTotal = parseFloat(totalEl.dataset.val || '0');
   const newTotal = totalCarrinho();
 
-  
   list.innerHTML = '';
 
   if (state.carrinho.length === 0) {
@@ -217,11 +186,9 @@ function renderCarrinho() {
     });
   });
 
-  
   countUp(totalEl, oldTotal, newTotal, '');
   totalEl.dataset.val = newTotal;
 
-  // Gerencia botões de remoção do carrinho
   list.querySelectorAll('.cart-item-remove').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
@@ -238,39 +205,9 @@ function renderCarrinho() {
     });
   });
 
-  // Mantém a lista de clientes atualizada
   renderClienteSelect();
 }
 
-// Adicionar produto ao carrinho
-document.querySelectorAll('.product-btn:not([disabled])').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const nome  = btn.querySelector('.product-name').textContent.trim();
-    const preco = parseFloat(
-      btn.querySelector('.product-price').textContent.replace('R$ ', '').replace(',', '.')
-    );
-
-    // Micro-interação de clique
-    btn.style.transform = 'scale(0.94)';
-    btn.style.transition = 'transform 0.12s ease';
-    setTimeout(() => {
-      btn.style.transform = '';
-      setTimeout(() => btn.style.transition = '', 150);
-    }, 120);
-
-    const existing = state.carrinho.find(i => i.nome === nome);
-    if (existing) {
-      existing.qty++;
-    } else {
-      state.carrinho.push({ nome, preco, qty: 1 });
-    }
-
-    renderCarrinho();
-    showToast(`${nome} adicionado`, 'success');
-  });
-});
-
-// Limpar carrinho
 document.querySelector('.btn-ghost-danger').addEventListener('click', function () {
   if (state.carrinho.length === 0) return;
   pulse(this);
@@ -279,68 +216,85 @@ document.querySelector('.btn-ghost-danger').addEventListener('click', function (
   showToast('Comanda limpa', 'warning');
 });
 
-// Receber
-document.querySelector('.btn-receive').addEventListener('click', () => {
+function montarItensVenda() {
+  return state.carrinho.map(item => ({
+    produtoId: item.produtoId,
+    descricao: item.nome,
+    quantidade: item.qty,
+    valor: item.preco
+  }));
+}
+
+async function recarregarDados() {
+  const [produtos, clientes, historico] = await Promise.all([
+    Backend.produtos.listar(),
+    Backend.clientes.listar(),
+    Backend.historico.listar()
+  ]);
+  if (produtos) state.produtos = produtos;
+  if (clientes) state.clientes = clientes;
+  if (historico) state.historico = historico;
+
+  renderProdutoGrid();
+  renderEstoque();
+  renderCaderneta();
+  renderClienteSelect();
+  renderHistorico();
+
+  const fiadoEl = document.querySelector('.stat-red');
+  const totalFiado = state.clientes.reduce((s, c) => s + c.divida, 0);
+  countUp(fiadoEl, parseFloat(fiadoEl.dataset.val || '0'), totalFiado, '');
+  fiadoEl.dataset.val = totalFiado;
+
+  atualizaStatEstoque();
+}
+
+document.querySelector('.btn-receive').addEventListener('click', async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
   const total = totalCarrinho();
 
-  // Salva a venda no histórico
-  state.historico.unshift({
-    id: Date.now(),
-    cliente: 'Avulso',
-    hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    total,
-    tipo: 'pago',
-    itens: state.carrinho.map(i => ({ desc: `${i.qty}× ${i.nome}`, val: i.preco * i.qty })),
-  });
+  try {
 
-  state.caixaHoje += total;
-  const caixaEl = document.querySelector('.stat-green');
-  const oldCaixa = parseFloat(caixaEl.dataset.val || '320');
-  countUp(caixaEl, oldCaixa, state.caixaHoje, '');
-  caixaEl.dataset.val = state.caixaHoje;
+    await registrarVenda({ clienteId: null, clienteNome: 'Avulso', tipo: 'pago', itens: montarItensVenda() });
 
-  state.carrinho = [];
-  renderCarrinho();
-  renderHistorico();
-  showToast(`Recebido: ${fmt(total)}`, 'success');
+    state.caixaHoje += total;
+    const caixaEl = document.querySelector('.stat-green');
+    countUp(caixaEl, parseFloat(caixaEl.dataset.val || '0'), state.caixaHoje, '');
+    caixaEl.dataset.val = state.caixaHoje;
+
+    state.carrinho = [];
+    await recarregarDados();
+    renderCarrinho();
+    showToast(`Recebido: ${fmt(total)}`, 'success');
+  } catch (erro) {
+    showToast(erro.message, 'error');
+  }
 });
 
-// Pendurar (fiado)
-document.querySelector('.btn-fiado').addEventListener('click', () => {
+document.querySelector('.btn-fiado').addEventListener('click', async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
   const select = document.querySelector('.field-select');
   const clienteNome = select.value.split(' —')[0].trim();
-  if (clienteNome.startsWith('—')) return showToast('Selecione um cliente para fiado', 'error');
+  if (clienteNome.startsWith('—') || !clienteNome) return showToast('Selecione um cliente para fiado', 'error');
+
+  const cliente = state.clientes.find(c => c.nome === clienteNome);
+  if (!cliente) return showToast('Cliente não encontrado', 'error');
 
   const total = totalCarrinho();
-  const cliente = state.clientes.find(c => c.nome === clienteNome);
-  if (cliente) cliente.divida += total;
 
-  state.historico.unshift({
-    id: Date.now(),
-    cliente: clienteNome,
-    hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    total,
-    tipo: 'fiado',
-    itens: state.carrinho.map(i => ({ desc: `${i.qty}× ${i.nome}`, val: i.preco * i.qty })),
-  });
+  try {
 
-  // Recalcula total pendurado
-  const fiadoEl = document.querySelector('.stat-red');
-  const totalFiado = state.clientes.reduce((s, c) => s + c.divida, 0);
-  const oldFiado = parseFloat(fiadoEl.dataset.val || '57.5');
-  countUp(fiadoEl, oldFiado, totalFiado, '');
-  fiadoEl.dataset.val = totalFiado;
+    await registrarVenda({ clienteId: cliente.id, clienteNome: cliente.nome, tipo: 'fiado', itens: montarItensVenda() });
 
-  state.carrinho = [];
-  renderCarrinho();
-  renderCaderneta();
-  renderHistorico();
-  showToast(`Pendurado para ${clienteNome}: ${fmt(total)}`, 'warning');
+    state.carrinho = [];
+    await recarregarDados();
+    renderCarrinho();
+    showToast(`Pendurado para ${clienteNome}: ${fmt(total)}`, 'warning');
+  } catch (erro) {
+    showToast(erro.message, 'error');
+  }
 });
 
-// --- SELECT DE CLIENTES NO PDV ---
 function renderClienteSelect() {
   const select = document.querySelector('.field-select');
   const val = select.value;
@@ -354,7 +308,6 @@ function renderClienteSelect() {
   });
 }
 
-// --- ESTOQUE — render ---
 function renderEstoque() {
   const wrap = document.querySelector('#view-estoque .table-wrap');
   const head = wrap.querySelector('.table-head');
@@ -385,10 +338,8 @@ function renderEstoque() {
     }));
   });
 
-  // Atualiza os cards de produtos na tela principal
   renderProdutoGrid();
 
-  // Configura ação de edição
   wrap.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -401,7 +352,6 @@ function renderEstoque() {
     });
   });
 
-  // Configura ação de exclusão
   wrap.querySelectorAll('.btn-delete').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -411,8 +361,8 @@ function renderEstoque() {
       row.style.transform = 'translateX(20px)';
       row.style.maxHeight = '0';
       row.style.overflow = 'hidden';
-      setTimeout(async () => {
-        await Backend.produtos.deletar(id);
+      setTimeout(() => {
+        Backend.produtos.deletar(id);
         state.produtos = state.produtos.filter(p => p.id !== id);
         renderEstoque();
         showToast('Produto removido do banco', 'error');
@@ -421,26 +371,60 @@ function renderEstoque() {
   });
 }
 
-// Grid de produtos (PDV)
 function renderProdutoGrid() {
   const grid = document.querySelector('.product-grid');
-  const btnsAtivos = grid.querySelectorAll('.product-btn');
+  grid.innerHTML = '';
 
-  state.produtos.forEach((p, i) => {
-    const btn = btnsAtivos[i];
-    if (!btn) return;
+  state.produtos.forEach(p => {
     const badgeClass = p.estoque === 0 ? 'badge-red' : p.estoque <= 6 ? 'badge-orange' : 'badge-green';
     const badgeText  = p.estoque === 0 ? 'Esgotado' : `${p.estoque} un`;
-    btn.querySelector('.product-name').textContent = p.nome;
-    btn.querySelector('.product-price').textContent = fmt(p.preco);
-    const badge = btn.querySelector('.badge');
-    badge.className = `badge ${badgeClass}`;
-    badge.textContent = badgeText;
+
+    const btn = document.createElement('button');
+    btn.className = 'product-btn';
+    btn.dataset.id = p.id;
     btn.disabled = p.estoque === 0;
+    btn.innerHTML = `
+      <span class="product-name">${p.nome}</span>
+      <div class="product-footer">
+        <span class="product-price">${fmt(p.preco)}</span>
+        <span class="badge ${badgeClass}">${badgeText}</span>
+      </div>
+    `;
+    btn.addEventListener('click', () => adicionarAoCarrinho(p, btn));
+    grid.appendChild(btn);
   });
+
+  const meta = grid.closest('section')?.querySelector('.panel-meta');
+  if (meta) meta.textContent = `${state.produtos.length} itens`;
 }
 
-// Novo produto
+function adicionarAoCarrinho(produto, btn) {
+  const existente = state.carrinho.find(i => i.produtoId === produto.id);
+  const qtdAtual = existente ? existente.qty : 0;
+
+  if (qtdAtual + 1 > produto.estoque) {
+    return showToast(`Estoque insuficiente de ${produto.nome}`, 'error');
+  }
+
+  if (btn) {
+    btn.style.transform = 'scale(0.94)';
+    btn.style.transition = 'transform 0.12s ease';
+    setTimeout(() => {
+      btn.style.transform = '';
+      setTimeout(() => btn.style.transition = '', 150);
+    }, 120);
+  }
+
+  if (existente) {
+    existente.qty++;
+  } else {
+    state.carrinho.push({ produtoId: produto.id, nome: produto.nome, preco: produto.preco, qty: 1 });
+  }
+
+  renderCarrinho();
+  showToast(`${produto.nome} adicionado`, 'success');
+}
+
 document.querySelector('#view-estoque .btn-primary').addEventListener('click', () => {
   const m = document.getElementById('modal-new-product');
   m.querySelector('input[type="text"]').value = '';
@@ -455,13 +439,13 @@ document.querySelector('#modal-new-product .btn-primary').addEventListener('clic
   const preco = parseFloat(m.querySelectorAll('input[type="number"]')[0].value) || 0;
   const estoque = parseInt(m.querySelectorAll('input[type="number"]')[1].value) || 0;
   if (!nome) return showToast('Informe o nome do produto', 'error');
-  
+
   const novoProduto = await Backend.produtos.criar({ nome, preco, estoque });
   if (novoProduto) {
     state.produtos.push(novoProduto);
     closeModal('modal-new-product');
     renderEstoque();
-    showToast(`${nome} salvo no banco`, 'success');
+    showToast(`${nome} saved in database`, 'success');
   }
 });
 
@@ -471,15 +455,14 @@ document.querySelector('#modal-edit-product .btn-primary').addEventListener('cli
   p.nome    = m.querySelector('input[type="text"]').value.trim() || p.nome;
   p.preco   = parseFloat(m.querySelectorAll('input[type="number"]')[0].value) || p.preco;
   p.estoque = parseInt(m.querySelectorAll('input[type="number"]')[1].value) ?? p.estoque;
-  
+
   await Backend.produtos.atualizar(p.id, { nome: p.nome, preco: p.preco, estoque: p.estoque });
-  
+
   closeModal('modal-edit-product');
   renderEstoque();
   showToast('Produto atualizado no banco', 'success');
 });
 
-/* Atualiza stat "Itens em Estoque" */
 function atualizaStatEstoque() {
   const total = state.produtos.reduce((s, p) => s + p.estoque, 0);
   const el = document.querySelector('.stat-amber');
@@ -495,7 +478,6 @@ function atualizaStatEstoque() {
   })(performance.now());
 }
 
-// --- CADERNETA — render ---
 function renderCaderneta() {
   const list = document.querySelector('.client-list');
   list.innerHTML = '';
@@ -528,7 +510,6 @@ function renderCaderneta() {
     }));
   });
 
-  /* bind quitar */
   list.querySelectorAll('.btn-success-sm').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -541,7 +522,6 @@ function renderCaderneta() {
     });
   });
 
-  /* bind editar cliente */
   list.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -553,7 +533,6 @@ function renderCaderneta() {
     });
   });
 
-  /* bind deletar cliente */
   list.querySelectorAll('.btn-delete').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -563,49 +542,57 @@ function renderCaderneta() {
       card.style.transform = 'translateX(20px)';
       card.style.maxHeight = '0';
       card.style.overflow = 'hidden';
-      setTimeout(() => {
+      setTimeout(async () => {
+        await Backend.clientes.deletar(id);
         state.clientes = state.clientes.filter(c => c.id !== id);
         renderCaderneta();
         renderClienteSelect();
-        showToast('Cliente removido', 'error');
+        showToast('Cliente removido do banco', 'error');
       }, 220);
     });
   });
 }
 
-// Novo cliente
 document.querySelector('#view-caderneta .btn-primary').addEventListener('click', () => {
   document.getElementById('modal-new-client').querySelector('.field-input').value = '';
   openModal('modal-new-client');
 });
 
-document.querySelector('#modal-new-client .btn-primary').addEventListener('click', () => {
+document.querySelector('#modal-new-client .btn-primary').addEventListener('click', async () => {
   const nome = document.querySelector('#modal-new-client .field-input').value.trim();
   if (!nome) return showToast('Informe o nome do cliente', 'error');
-  state.clientes.push({ id: Date.now(), nome, divida: 0 });
-  closeModal('modal-new-client');
-  renderCaderneta();
-  renderClienteSelect();
-  showToast(`${nome} cadastrado`, 'success');
+
+  const novoCliente = await Backend.clientes.criar({ nome, divida: 0 });
+  if (novoCliente) {
+    state.clientes.push(novoCliente);
+    closeModal('modal-new-client');
+    renderCaderneta();
+    renderClienteSelect();
+    showToast(`${nome} cadastrado com sucesso!`, 'success');
+  }
 });
 
-// Editar cliente
-document.querySelector('#modal-edit-client .btn-primary').addEventListener('click', () => {
+document.querySelector('#modal-edit-client .btn-primary').addEventListener('click', async () => {
   const c = state.editandoCliente;
   const m = document.getElementById('modal-edit-client');
   c.nome   = m.querySelectorAll('.field-input')[0].value.trim() || c.nome;
   c.divida = parseFloat(m.querySelectorAll('.field-input')[1].value) || 0;
+
+  await Backend.clientes.atualizar(c.id, { nome: c.nome, divida: c.divida });
+
   closeModal('modal-edit-client');
   renderCaderneta();
   renderClienteSelect();
-  showToast('Cliente atualizado', 'success');
+  showToast('Cliente atualizado no banco', 'success');
 });
 
-// Quitar dívida
-document.querySelector('.btn-success-lg').addEventListener('click', () => {
+document.querySelector('.btn-success-lg').addEventListener('click', async () => {
   const c = state.quitandoCliente;
   const val = parseFloat(document.querySelector('#modal-quitar .field-input').value) || 0;
   c.divida = Math.max(0, c.divida - val);
+
+  await Backend.clientes.atualizar(c.id, { nome: c.nome, divida: c.divida });
+  await registrarVenda({ clienteId: c.id, clienteNome: c.nome, tipo: 'pago', itens: [{descricao: 'Pagamento de Fiado', quantidade: 1, valor: val}] });
 
   const fiadoEl = document.querySelector('.stat-red');
   const totalFiado = state.clientes.reduce((s, cl) => s + cl.divida, 0);
@@ -619,7 +606,6 @@ document.querySelector('.btn-success-lg').addEventListener('click', () => {
   showToast(`${c.nome} pagou ${fmt(val)}`, 'success');
 });
 
-// --- HISTÓRICO — render ---
 function renderHistorico() {
   const list = document.querySelector('.comanda-list');
   list.innerHTML = '';
@@ -637,7 +623,7 @@ function renderHistorico() {
     card.innerHTML = `
       <div class="comanda-header">
         <div>
-          <div class="comanda-client">${h.cliente}</div>
+          <div class="comanda-client">${h.cliente_name || 'Cliente Geral'}</div>
           <div class="comanda-time">${h.hora}</div>
         </div>
         <div class="comanda-right">
@@ -646,9 +632,7 @@ function renderHistorico() {
         </div>
       </div>
       <div class="comanda-items">
-        ${h.itens.map(it =>
-          `<div class="comanda-line"><span>${it.desc}</span><span>${fmt(it.val)}</span></div>`
-        ).join('')}
+         <div class="comanda-line"><span>Venda processada no PDV</span><span>${fmt(h.total)}</span></div>
       </div>
     `;
     list.appendChild(card);
@@ -659,7 +643,6 @@ function renderHistorico() {
   });
 }
 
-/* Limpar histórico */
 document.querySelector('#view-historico .btn-ghost-danger').addEventListener('click', function () {
   pulse(this);
   state.historico = [];
@@ -667,16 +650,31 @@ document.querySelector('#view-historico .btn-ghost-danger').addEventListener('cl
   showToast('Histórico limpo', 'warning');
 });
 
-// --- INICIALIZAÇÃO ---
 document.addEventListener('DOMContentLoaded', async () => {
-  // --- CARREGA DADOS REAIS DO BANCO DE DADOS ---
+
   const produtosDoBanco = await Backend.produtos.listar();
   if (produtosDoBanco) state.produtos = produtosDoBanco;
 
-  /* Guarda valores iniciais dos stats */
+  const clientesDoBanco = await Backend.clientes.listar();
+  if (clientesDoBanco) state.clientes = clientesDoBanco;
+
+  try {
+    const historicoDoBanco = await fetch('http://localhost:3000/api/historico').then(r => r.json());
+    if (historicoDoBanco) state.historico = historicoDoBanco;
+  } catch (err) {
+    console.error("Histórico ainda vazio ou erro de conexão:", err);
+  }
+
+  const totalFiadoInicial = state.clientes.reduce((s, c) => s + c.divida, 0);
+  const totalItensEstoque = state.produtos.reduce((s, p) => s + p.estoque, 0);
+
   document.querySelector('.stat-green').dataset.val = state.caixaHoje;
-  document.querySelector('.stat-red').dataset.val   = '57.5';
-  document.querySelector('.stat-amber').dataset.val = '127';
+  document.querySelector('.stat-red').dataset.val   = totalFiadoInicial;
+  document.querySelector('.stat-amber').dataset.val = totalItensEstoque;
+
+  document.querySelector('.stat-green').textContent = fmt(state.caixaHoje);
+  document.querySelector('.stat-red').textContent   = fmt(totalFiadoInicial);
+  document.querySelector('.stat-amber').textContent = totalItensEstoque;
 
   renderCarrinho();
   renderClienteSelect();
@@ -684,7 +682,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderCaderneta();
   renderHistorico();
 
-  /* Esconde toast estático inicial após 3s */
   const staticToast = document.querySelector('.toast-success');
   if (staticToast) {
     setTimeout(() => {
@@ -695,7 +692,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3000);
   }
 
-  /* Animação de entrada dos cards do header */
   document.querySelectorAll('.stat-card').forEach((card, i) => {
     card.style.opacity = '0';
     card.style.transform = 'translateY(-12px)';
@@ -706,7 +702,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }));
   });
 
-  /* Animação de entrada dos painéis */
   document.querySelectorAll('.panel').forEach((panel, i) => {
     panel.style.opacity = '0';
     panel.style.transform = 'translateY(16px)';

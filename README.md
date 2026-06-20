@@ -13,26 +13,30 @@ Este é um sistema de Ponto de Venda (PDV) desenvolvido como parte da disciplina
 - **Back-End:** Node.js, Express.
 - **Banco de Dados:** SQLite.
 
-## Como Executar o Projeto
+## ️ Passo a Passo para Testar o Projeto:
 
-1. **Pré-requisitos:** Certifique-se de ter o [Node.js](https://nodejs.org/) instalado no seu computador.
-2. Abra o seu terminal, entre na pasta principal do projeto e acesse o diretório do backend:
+Siga os passos abaixo para inicializar o banco de dados e rodar a aplicação localmente no seu computador.
+
+1. **Pré-requisitos:** Certifique-se de ter o [Node.js](https://nodejs.org/) instalado.
+2. Abra o seu terminal e acesse a pasta `backend` do projeto:
    ```bash
    cd backend
    ```
-3. Instale todas as dependências necessárias:
+3. Instale as bibliotecas e dependências necessárias:
    ```bash
    npm install
    ```
-4. *Opcional:* Se você quiser carregar o banco de dados com dados falsos iniciais (produtos e clientes para teste), rode o script semente:
+4. **Inicialize o Banco de Dados:** Execute o script automatizado que cria as tabelas (`schema.sql`) e preenche o sistema com produtos e clientes de teste (`seed.sql`):
    ```bash
-   node database/seed.js
+   node database/init.js
    ```
-5. Inicie o servidor do Back-end:
+   *(Você verá no terminal a confirmação de sucesso).*
+5. **Inicie o Servidor da API:**
    ```bash
    npm start
    ```
-6. Com o servidor rodando (você verá a mensagem `Servidor modular rodando em http://localhost:3000`), basta abrir o arquivo `frontend/index.html` em qualquer navegador web ou através do Live Server no VS Code.
+   *(Mantenha esta janela do terminal aberta. O servidor estará rodando na porta 3000).*
+6. **Acesse o Sistema:** Vá até a pasta `frontend` e dê um duplo clique no arquivo `index.html` para abri-lo no seu navegador web, ou utilize a extensão Live Server no VS Code.
 
 ## Estrutura de Pastas
 - `frontend/`: Contém a interface (`index.html`), folhas de estilo (`css/`) e lógicas de interação e chamadas de API (`js/`).

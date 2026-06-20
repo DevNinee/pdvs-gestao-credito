@@ -8,21 +8,18 @@ const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 
-// Middlewares Globais
 app.use(cors());
 app.use(express.json());
 
-// Serve o Front-end estático
-app.use(express.static(path.join(__dirname, '../../../frontend')));
+app.use(express.static(path.join(__dirname, '../../frontend')));
 
-// Rotas da API
 app.get('/api/status', (req, res) => res.json({ status: 'API Online e Modular!' }));
 app.use('/api/produtos', produtosRoutes);
 app.use('/api/clientes', clientesRoutes);
 
-// O ideal é a pessoa 1 criar o modulo de historico depois
+const historicoRoutes = require('./modules/historico/historico.routes');
+app.use('/api/historico', historicoRoutes);
 
-// Middleware de tratamento de Erros
 app.use(errorHandler);
 
 module.exports = app;

@@ -1,7 +1,6 @@
-// Interface de comunicação com a API do Back-end
+
 const API_URL = 'http://localhost:3000/api';
 
-// Wrapper para simplificar as requisições (Fetch API)
 async function chamarAPI(endpoint, metodo = 'GET', dados = null) {
   const configuracao = {
     method: metodo,
@@ -20,12 +19,11 @@ async function chamarAPI(endpoint, metodo = 'GET', dados = null) {
     return await resposta.json();
   } catch (erro) {
     console.error('Falha na API:', erro);
-    // showToast('Erro de conexão', 'error'); // Essa função tá no main.js
+
     return null;
   }
 }
 
-// Endpoints disponíveis para consumo no Front-end
 const Backend = {
   produtos: {
     listar: () => chamarAPI('/produtos'),
@@ -38,5 +36,21 @@ const Backend = {
     criar: (cliente) => chamarAPI('/clientes', 'POST', cliente),
     atualizar: (id, cliente) => chamarAPI(`/clientes/${id}`, 'PUT', cliente),
     deletar: (id) => chamarAPI(`/clientes/${id}`, 'DELETE')
+  },
+  historico: {
+    listar: () => chamarAPI('/historico')
   }
 };
+
+async function registrarVenda(venda) {
+  const resposta = await fetch(`${API_URL}/historico`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(venda)
+  });
+  const corpo = await resposta.json().catch(() => ({}));
+  if (!resposta.ok) {
+    throw new Error(corpo.error || 'Erro ao registrar a venda no servidor');
+  }
+  return corpo;
+}

@@ -1,0 +1,33 @@
+CREATE TABLE IF NOT EXISTS produtos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  preco REAL NOT NULL,
+  estoque INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS clientes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  divida REAL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS historico (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cliente_id INTEGER,
+  cliente_name TEXT NOT NULL,
+  hora TEXT NOT NULL,
+  total REAL NOT NULL,
+  tipo TEXT NOT NULL,
+  FOREIGN KEY (cliente_id) REFERENCES clientes (id)
+);
+
+CREATE TABLE IF NOT EXISTS historico_itens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  historico_id INTEGER NOT NULL,
+  produto_id INTEGER,
+  descricao TEXT NOT NULL,
+  quantidade INTEGER NOT NULL DEFAULT 1,
+  valor REAL NOT NULL,
+  FOREIGN KEY (historico_id) REFERENCES historico (id),
+  FOREIGN KEY (produto_id) REFERENCES produtos (id)
+);

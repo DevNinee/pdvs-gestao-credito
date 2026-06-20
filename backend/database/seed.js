@@ -2,10 +2,10 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./database.sqlite');
 
 db.serialize(() => {
-  // Limpa as tabelas para garantir que começamos do zero no seed
+
   db.run('DELETE FROM produtos');
   db.run('DELETE FROM clientes');
-  db.run('DELETE FROM sqlite_sequence'); // Resete de IDs
+  db.run('DELETE FROM sqlite_sequence'); 
 
   const insertProduto = db.prepare('INSERT INTO produtos (nome, preco, estoque) VALUES (?, ?, ?)');
   insertProduto.run('Cerveja Lata 350ml', 5.00, 48);
