@@ -9,7 +9,6 @@
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="header">
     <div class="header-inner">
 
@@ -39,72 +38,19 @@
     </div>
   </header>
 
-  <!-- MAIN LAYOUT -->
   <main class="main">
 
-    <!-- COLUNA ESQUERDA: PDV -->
     <div class="col-left">
 
-      <!-- Grid de Produtos -->
       <section class="panel">
         <div class="panel-header">
           <span class="panel-title">Selecionar Produto</span>
           <span class="panel-meta">6 itens</span>
         </div>
-        <div class="product-grid">
 
-          <button class="product-btn">
-            <span class="product-name">Cerveja Lata 350ml</span>
-            <div class="product-footer">
-              <span class="product-price">R$ 5,00</span>
-              <span class="badge badge-green">48 un</span>
-            </div>
-          </button>
-
-          <button class="product-btn">
-            <span class="product-name">Cerveja Long Neck</span>
-            <div class="product-footer">
-              <span class="product-price">R$ 8,00</span>
-              <span class="badge badge-green">24 un</span>
-            </div>
-          </button>
-
-          <button class="product-btn">
-            <span class="product-name">Refrigerante Lata</span>
-            <div class="product-footer">
-              <span class="product-price">R$ 5,00</span>
-              <span class="badge badge-green">20 un</span>
-            </div>
-          </button>
-
-          <button class="product-btn">
-            <span class="product-name">Água Mineral 500ml</span>
-            <div class="product-footer">
-              <span class="product-price">R$ 3,00</span>
-              <span class="badge badge-green">30 un</span>
-            </div>
-          </button>
-
-          <button class="product-btn" disabled>
-            <span class="product-name">Cachaça Dose</span>
-            <div class="product-footer">
-              <span class="product-price">R$ 6,00</span>
-              <span class="badge badge-red">Esgotado</span>
-            </div>
-          </button>
-
-          <button class="product-btn">
-            <span class="product-name">Vodka Dose</span>
-            <div class="product-footer">
-              <span class="product-price">R$ 9,00</span>
-              <span class="badge badge-orange">5 un</span>
-            </div>
-          </button>
-
-        </div>
+        <div class="product-grid"></div>
       </section>
 
-      <!-- Carrinho / Comanda -->
       <section class="panel panel-cart">
         <div class="panel-header">
           <span class="panel-title">Comanda Atual</span>
@@ -162,18 +108,15 @@
 
     </div>
 
-    <!-- COLUNA DIREITA: GESTÃO -->
     <div class="col-right">
       <section class="panel panel-right">
 
-        <!-- Tabs -->
         <div class="tabs">
           <button class="tab active">Estoque</button>
           <button class="tab">Caderneta</button>
           <button class="tab">Histórico</button>
         </div>
 
-        <!-- ══ ABA ESTOQUE ══ -->
         <div class="tab-content" id="view-estoque">
           <div class="tab-toolbar">
             <span class="toolbar-title">Bebidas em estoque</span>
@@ -251,7 +194,6 @@
           </div>
         </div>
 
-        <!-- ══ ABA CADERNETA ══ -->
         <div class="tab-content hidden" id="view-caderneta">
           <div class="tab-toolbar">
             <span class="toolbar-title">Clientes cadastrados</span>
@@ -298,7 +240,6 @@
           </div>
         </div>
 
-        <!-- ══ ABA HISTÓRICO ══ -->
         <div class="tab-content hidden" id="view-historico">
           <div class="tab-toolbar">
             <span class="toolbar-title">Comandas do dia</span>
@@ -366,10 +307,7 @@
 
   </main>
 
-  <!-- MODAIS (todos ocultos por padrão) -->
-
-  <!-- Modal: Novo Produto -->
-  <div class="modal-overlay" id="modal-new-product">
+  <div class="modal-overlay hidden" id="modal-new-product">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Novo Produto</span>
@@ -398,7 +336,6 @@
     </div>
   </div>
 
-  <!-- Modal: Editar Produto -->
   <div class="modal-overlay hidden" id="modal-edit-product">
     <div class="modal">
       <div class="modal-header">
@@ -428,7 +365,6 @@
     </div>
   </div>
 
-  <!-- Modal: Novo Cliente -->
   <div class="modal-overlay hidden" id="modal-new-client">
     <div class="modal">
       <div class="modal-header">
@@ -448,7 +384,6 @@
     </div>
   </div>
 
-  <!-- Modal: Editar Cliente -->
   <div class="modal-overlay hidden" id="modal-edit-client">
     <div class="modal">
       <div class="modal-header">
@@ -472,7 +407,6 @@
     </div>
   </div>
 
-  <!-- Modal: Quitar Dívida -->
   <div class="modal-overlay hidden" id="modal-quitar">
     <div class="modal">
       <div class="modal-header">
@@ -496,7 +430,6 @@
     </div>
   </div>
 
-  <!-- TOASTS (exemplos estáticos) -->
   <div class="toast-container">
     <div class="toast toast-success">Venda concluída: R$ 19,00</div>
   </div>

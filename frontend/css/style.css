@@ -1,4 +1,4 @@
-// --- RESET & BASE ---
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -23,8 +23,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 .hidden { display: none !important; }
 
-
-// --- HEADER ---
 .header {
   background: #111;
   border-bottom: 1px solid #222;
@@ -102,8 +100,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .stat-red    { color: #ef4444; }
 .stat-amber  { color: #f59e0b; }
 
-
-// --- MAIN LAYOUT ---
 .main {
   max-width: 1500px;
   margin: 0 auto;
@@ -125,8 +121,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   .col-left, .col-right { overflow-y: auto; }
 }
 
-
-// --- PANEL (card container) ---
 .panel {
   background: #141414;
   border: 1px solid #222;
@@ -169,8 +163,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   color: #555;
 }
 
-
-// --- PRODUCT GRID ---
 .product-grid {
   padding: 10px;
   display: grid;
@@ -222,8 +214,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   font-size: 13px;
 }
 
-
-// --- BADGES ---
 .badge {
   font-size: 10px;
   font-weight: 700;
@@ -236,8 +226,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .badge-orange { background: #451a03; color: #fb923c; }
 .badge-red    { background: #450a0a; color: #f87171; }
 
-
-// --- CART ---
 .cart-list {
   flex: 1;
   overflow-y: auto;
@@ -373,8 +361,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 .btn-fiado:hover { background: #991b1b; }
 
-
-// --- FORM FIELDS ---
 .field-group {
   display: flex;
   flex-direction: column;
@@ -431,8 +417,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   gap: 10px;
 }
 
-
-// --- TABS ---
 .tabs {
   display: flex;
   border-bottom: 1px solid #222;
@@ -469,8 +453,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 .tab-content { flex: 1; overflow-y: auto; }
 
-
-// --- TAB TOOLBAR ---
 .tab-toolbar {
   padding: 12px 14px;
   display: flex;
@@ -487,8 +469,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   text-transform: uppercase;
 }
 
-
-// --- STOCK TABLE ---
 .table-wrap { overflow-x: auto; }
 
 .table-head,
@@ -529,8 +509,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   justify-content: center;
 }
 
-
-// --- CLIENT LIST ---
 .client-list {
   padding: 10px;
   display: flex;
@@ -572,8 +550,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   flex-wrap: wrap;
 }
 
-
-// --- COMANDA HISTORY ---
 .comanda-list {
   padding: 10px;
   display: flex;
@@ -639,8 +615,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 .comanda-line span:last-child { font-family: monospace; }
 
-
-// --- BUTTONS ---
 .btn-primary {
   background: #f59e0b;
   color: #111;
@@ -728,8 +702,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 .btn-ghost-danger:hover { color: #ef4444; }
 
-
-// --- MODAL ---
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -820,8 +792,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   color: #ef4444;
 }
 
-
-// --- TOASTS ---
 .toast-container {
   position: fixed;
   top: 16px;

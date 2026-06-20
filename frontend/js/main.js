@@ -1,18 +1,15 @@
-// --- BarControl — JavaScript de Interações & Animações ---
 
-// Estado global
 const state = {
   produtos: [],
-  clientes: [], // Começa vazio e puxa do banco real
-  historico: [], // Começa vazio e puxa do banco real
-  carrinho: [],     // { produtoId, nome, preco, qty }
+  clientes: [], 
+  historico: [], 
+  carrinho: [],     
   caixaHoje: 320.00,
   editandoProduto: null,
   editandoCliente: null,
   quitandoCliente: null,
 };
 
-// --- UTILITÁRIOS ---
 const fmt = v => `R$ ${v.toFixed(2).replace('.', ',')}`;
 
 function showToast(msg, tipo = 'success') {
@@ -62,7 +59,6 @@ function countUp(el, from, to, prefix = '') {
   requestAnimationFrame(step);
 }
 
-// --- MODAIS ---
 function openModal(id) {
   const overlay = document.getElementById(id);
   overlay.classList.remove('hidden');
@@ -91,14 +87,12 @@ function closeModal(id) {
   overlay.addEventListener('transitionend', () => overlay.classList.add('hidden'), { once: true });
 }
 
-/* Fecha modal ao clicar no overlay */
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeModal(overlay.id);
   });
 });
 
-/* Fecha modal ao clicar em ✕ */
 document.querySelectorAll('.modal-close').forEach(btn => {
   btn.addEventListener('click', () => {
     const overlay = btn.closest('.modal-overlay');
@@ -106,7 +100,6 @@ document.querySelectorAll('.modal-close').forEach(btn => {
   });
 });
 
-/* Botões Cancelar */
 document.querySelectorAll('.btn-outline').forEach(btn => {
   btn.addEventListener('click', () => {
     const overlay = btn.closest('.modal-overlay');
@@ -114,7 +107,6 @@ document.querySelectorAll('.btn-outline').forEach(btn => {
   });
 });
 
-// --- TABS ---
 const tabs = document.querySelectorAll('.tab');
 const views = {
   0: 'view-estoque',
@@ -146,7 +138,6 @@ tabs.forEach((tab, i) => {
   });
 });
 
-// --- CARRINHO ---
 function totalCarrinho() {
   return state.carrinho.reduce((s, i) => s + i.preco * i.qty, 0);
 }
@@ -198,7 +189,6 @@ function renderCarrinho() {
   countUp(totalEl, oldTotal, newTotal, '');
   totalEl.dataset.val = newTotal;
 
-  // Gerencia botões de remoção do carrinho
   list.querySelectorAll('.cart-item-remove').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
@@ -215,39 +205,9 @@ function renderCarrinho() {
     });
   });
 
-  // Mantém a lista de clientes atualizada
   renderClienteSelect();
 }
 
-// Adicionar produto ao carrinho
-document.querySelectorAll('.product-btn:not([disabled])').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const nome  = btn.querySelector('.product-name').textContent.trim();
-    const preco = parseFloat(
-      btn.querySelector('.product-price').textContent.replace('R$ ', '').replace(',', '.')
-    );
-
-    // Micro-interação de clique
-    btn.style.transform = 'scale(0.94)';
-    btn.style.transition = 'transform 0.12s ease';
-    setTimeout(() => {
-      btn.style.transform = '';
-      setTimeout(() => btn.style.transition = '', 150);
-    }, 120);
-
-    const existing = state.carrinho.find(i => i.nome === nome);
-    if (existing) {
-      existing.qty++;
-    } else {
-      state.carrinho.push({ nome, preco, qty: 1 });
-    }
-
-    renderCarrinho();
-    showToast(`${nome} adicionado`, 'success');
-  });
-});
-
-// Limpar carrinho
 document.querySelector('.btn-ghost-danger').addEventListener('click', function () {
   if (state.carrinho.length === 0) return;
   pulse(this);
@@ -256,95 +216,85 @@ document.querySelector('.btn-ghost-danger').addEventListener('click', function (
   showToast('Comanda limpa', 'warning');
 });
 
-// --- REQUISITO 3: RECEBER (Frente de Caixa Real) ---
+function montarItensVenda() {
+  return state.carrinho.map(item => ({
+    produtoId: item.produtoId,
+    descricao: item.nome,
+    quantidade: item.qty,
+    valor: item.preco
+  }));
+}
+
+async function recarregarDados() {
+  const [produtos, clientes, historico] = await Promise.all([
+    Backend.produtos.listar(),
+    Backend.clientes.listar(),
+    Backend.historico.listar()
+  ]);
+  if (produtos) state.produtos = produtos;
+  if (clientes) state.clientes = clientes;
+  if (historico) state.historico = historico;
+
+  renderProdutoGrid();
+  renderEstoque();
+  renderCaderneta();
+  renderClienteSelect();
+  renderHistorico();
+
+  const fiadoEl = document.querySelector('.stat-red');
+  const totalFiado = state.clientes.reduce((s, c) => s + c.divida, 0);
+  countUp(fiadoEl, parseFloat(fiadoEl.dataset.val || '0'), totalFiado, '');
+  fiadoEl.dataset.val = totalFiado;
+
+  atualizaStatEstoque();
+}
+
 document.querySelector('.btn-receive').addEventListener('click', async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
   const total = totalCarrinho();
 
-  // Envia para o seu módulo de histórico no back-end
-  const respostaVenda = await fetch('http://localhost:3000/api/historico', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      clienteNome: 'Avulso',
-      total: total,
-      tipo: 'pago'
-    })
-  });
+  try {
 
-  if (respostaVenda.ok) {
+    await registrarVenda({ clienteId: null, clienteNome: 'Avulso', tipo: 'pago', itens: montarItensVenda() });
+
     state.caixaHoje += total;
     const caixaEl = document.querySelector('.stat-green');
-    const oldCaixa = parseFloat(caixaEl.dataset.val || '320');
-    countUp(caixaEl, oldCaixa, state.caixaHoje, '');
+    countUp(caixaEl, parseFloat(caixaEl.dataset.val || '0'), state.caixaHoje, '');
     caixaEl.dataset.val = state.caixaHoje;
 
     state.carrinho = [];
+    await recarregarDados();
     renderCarrinho();
-    
-    // Recarrega o histórico real do banco
-    const historicoAtualizado = await fetch('http://localhost:3000/api/historico').then(r => r.json());
-    if (historicoAtualizado) state.historico = historicoAtualizado;
-    
-    renderHistorico();
     showToast(`Recebido: ${fmt(total)}`, 'success');
-  } else {
-    showToast('Erro ao salvar venda no servidor', 'error');
+  } catch (erro) {
+    showToast(erro.message, 'error');
   }
 });
 
-// --- REQUISITO 3: PENDURAR (FIADO) (Frente de Caixa Real) ---
 document.querySelector('.btn-fiado').addEventListener('click', async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
   const select = document.querySelector('.field-select');
   const clienteNome = select.value.split(' —')[0].trim();
-  if (clienteNome.startsWith('—')) return showToast('Selecione um cliente para fiado', 'error');
+  if (clienteNome.startsWith('—') || !clienteNome) return showToast('Selecione um cliente para fiado', 'error');
+
+  const cliente = state.clientes.find(c => c.nome === clienteNome);
+  if (!cliente) return showToast('Cliente não encontrado', 'error');
 
   const total = totalCarrinho();
-  const cliente = state.clientes.find(c => c.nome === clienteNome);
-  
-  if (cliente) {
-    // 1. Salva a venda no histórico do banco real
-    const respostaVenda = await fetch('http://localhost:3000/api/historico', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clienteNome: clienteNome,
-        total: total,
-        tipo: 'fiado'
-      })
-    });
 
-    if (respostaVenda.ok) {
-      // 2. Atualiza a dívida do cliente real no banco de dados usando a api do seu grupo
-      const novaDivida = cliente.divida + total;
-      await Backend.clientes.atualizar(cliente.id, { nome: cliente.nome, divida: novaDivida });
-      cliente.divida = novaDivida;
+  try {
 
-      // Recalcula total pendurado nos cards superiores
-      const fiadoEl = document.querySelector('.stat-red');
-      const totalFiado = state.clientes.reduce((s, c) => s + c.divida, 0);
-      const oldFiado = parseFloat(fiadoEl.dataset.val || '57.5');
-      countUp(fiadoEl, oldFiado, totalFiado, '');
-      fiadoEl.dataset.val = totalFiado;
+    await registrarVenda({ clienteId: cliente.id, clienteNome: cliente.nome, tipo: 'fiado', itens: montarItensVenda() });
 
-      state.carrinho = [];
-      renderCarrinho();
-      renderCaderneta();
-      
-      // Recarrega o histórico real
-      const historicoAtualizado = await fetch('http://localhost:3000/api/historico').then(r => r.json());
-      if (historicoAtualizado) state.historico = historicoAtualizado;
-      
-      renderHistorico();
-      showToast(`Pendurado para ${clienteNome}: ${fmt(total)}`, 'warning');
-    } else {
-      showToast('Erro ao registrar fiado no servidor', 'error');
-    }
+    state.carrinho = [];
+    await recarregarDados();
+    renderCarrinho();
+    showToast(`Pendurado para ${clienteNome}: ${fmt(total)}`, 'warning');
+  } catch (erro) {
+    showToast(erro.message, 'error');
   }
 });
 
-// --- SELECT DE CLIENTES NO PDV ---
 function renderClienteSelect() {
   const select = document.querySelector('.field-select');
   const val = select.value;
@@ -358,7 +308,6 @@ function renderClienteSelect() {
   });
 }
 
-// --- ESTOQUE — render ---
 function renderEstoque() {
   const wrap = document.querySelector('#view-estoque .table-wrap');
   const head = wrap.querySelector('.table-head');
@@ -424,20 +373,56 @@ function renderEstoque() {
 
 function renderProdutoGrid() {
   const grid = document.querySelector('.product-grid');
-  const btnsAtivos = grid.querySelectorAll('.product-btn');
+  grid.innerHTML = '';
 
-  state.produtos.forEach((p, i) => {
-    const btn = btnsAtivos[i];
-    if (!btn) return;
+  state.produtos.forEach(p => {
     const badgeClass = p.estoque === 0 ? 'badge-red' : p.estoque <= 6 ? 'badge-orange' : 'badge-green';
     const badgeText  = p.estoque === 0 ? 'Esgotado' : `${p.estoque} un`;
-    btn.querySelector('.product-name').textContent = p.nome;
-    btn.querySelector('.product-price').textContent = fmt(p.preco);
-    const badge = btn.querySelector('.badge');
-    badge.className = `badge ${badgeClass}`;
-    badge.textContent = badgeText;
+
+    const btn = document.createElement('button');
+    btn.className = 'product-btn';
+    btn.dataset.id = p.id;
     btn.disabled = p.estoque === 0;
+    btn.innerHTML = `
+      <span class="product-name">${p.nome}</span>
+      <div class="product-footer">
+        <span class="product-price">${fmt(p.preco)}</span>
+        <span class="badge ${badgeClass}">${badgeText}</span>
+      </div>
+    `;
+    btn.addEventListener('click', () => adicionarAoCarrinho(p, btn));
+    grid.appendChild(btn);
   });
+
+  const meta = grid.closest('section')?.querySelector('.panel-meta');
+  if (meta) meta.textContent = `${state.produtos.length} itens`;
+}
+
+function adicionarAoCarrinho(produto, btn) {
+  const existente = state.carrinho.find(i => i.produtoId === produto.id);
+  const qtdAtual = existente ? existente.qty : 0;
+
+  if (qtdAtual + 1 > produto.estoque) {
+    return showToast(`Estoque insuficiente de ${produto.nome}`, 'error');
+  }
+
+  if (btn) {
+    btn.style.transform = 'scale(0.94)';
+    btn.style.transition = 'transform 0.12s ease';
+    setTimeout(() => {
+      btn.style.transform = '';
+      setTimeout(() => btn.style.transition = '', 150);
+    }, 120);
+  }
+
+  if (existente) {
+    existente.qty++;
+  } else {
+    state.carrinho.push({ produtoId: produto.id, nome: produto.nome, preco: produto.preco, qty: 1 });
+  }
+
+  renderCarrinho();
+  showToast(`${produto.nome} adicionado`, 'success');
 }
 
 document.querySelector('#view-estoque .btn-primary').addEventListener('click', () => {
@@ -454,7 +439,7 @@ document.querySelector('#modal-new-product .btn-primary').addEventListener('clic
   const preco = parseFloat(m.querySelectorAll('input[type="number"]')[0].value) || 0;
   const estoque = parseInt(m.querySelectorAll('input[type="number"]')[1].value) || 0;
   if (!nome) return showToast('Informe o nome do produto', 'error');
-  
+
   const novoProduto = await Backend.produtos.criar({ nome, preco, estoque });
   if (novoProduto) {
     state.produtos.push(novoProduto);
@@ -470,9 +455,9 @@ document.querySelector('#modal-edit-product .btn-primary').addEventListener('cli
   p.nome    = m.querySelector('input[type="text"]').value.trim() || p.nome;
   p.preco   = parseFloat(m.querySelectorAll('input[type="number"]')[0].value) || p.preco;
   p.estoque = parseInt(m.querySelectorAll('input[type="number"]')[1].value) ?? p.estoque;
-  
+
   await Backend.produtos.atualizar(p.id, { nome: p.nome, preco: p.preco, estoque: p.estoque });
-  
+
   closeModal('modal-edit-product');
   renderEstoque();
   showToast('Produto atualizado no banco', 'success');
@@ -493,7 +478,6 @@ function atualizaStatEstoque() {
   })(performance.now());
 }
 
-// --- CADERNETA — render (Clientes do Banco Real) ---
 function renderCaderneta() {
   const list = document.querySelector('.client-list');
   list.innerHTML = '';
@@ -526,7 +510,6 @@ function renderCaderneta() {
     }));
   });
 
-  /* bind quitar */
   list.querySelectorAll('.btn-success-sm').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -539,7 +522,6 @@ function renderCaderneta() {
     });
   });
 
-  /* bind editar cliente */
   list.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -551,7 +533,6 @@ function renderCaderneta() {
     });
   });
 
-  /* bind deletar cliente */
   list.querySelectorAll('.btn-delete').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
@@ -572,7 +553,6 @@ function renderCaderneta() {
   });
 }
 
-// --- REQUISITO 1: ADICIONAR CLIENTE REAL ---
 document.querySelector('#view-caderneta .btn-primary').addEventListener('click', () => {
   document.getElementById('modal-new-client').querySelector('.field-input').value = '';
   openModal('modal-new-client');
@@ -581,8 +561,7 @@ document.querySelector('#view-caderneta .btn-primary').addEventListener('click',
 document.querySelector('#modal-new-client .btn-primary').addEventListener('click', async () => {
   const nome = document.querySelector('#modal-new-client .field-input').value.trim();
   if (!nome) return showToast('Informe o nome do cliente', 'error');
-  
-  // Cria no banco real através da classe utilitária de vocês
+
   const novoCliente = await Backend.clientes.criar({ nome, divida: 0 });
   if (novoCliente) {
     state.clientes.push(novoCliente);
@@ -593,28 +572,27 @@ document.querySelector('#modal-new-client .btn-primary').addEventListener('click
   }
 });
 
-// Editar cliente real
 document.querySelector('#modal-edit-client .btn-primary').addEventListener('click', async () => {
   const c = state.editandoCliente;
   const m = document.getElementById('modal-edit-client');
   c.nome   = m.querySelectorAll('.field-input')[0].value.trim() || c.nome;
   c.divida = parseFloat(m.querySelectorAll('.field-input')[1].value) || 0;
-  
+
   await Backend.clientes.atualizar(c.id, { nome: c.nome, divida: c.divida });
-  
+
   closeModal('modal-edit-client');
   renderCaderneta();
   renderClienteSelect();
   showToast('Cliente atualizado no banco', 'success');
 });
 
-// Quitar dívida real
 document.querySelector('.btn-success-lg').addEventListener('click', async () => {
   const c = state.quitandoCliente;
   const val = parseFloat(document.querySelector('#modal-quitar .field-input').value) || 0;
   c.divida = Math.max(0, c.divida - val);
 
   await Backend.clientes.atualizar(c.id, { nome: c.nome, divida: c.divida });
+  await registrarVenda({ clienteId: c.id, clienteNome: c.nome, tipo: 'pago', itens: [{descricao: 'Pagamento de Fiado', quantidade: 1, valor: val}] });
 
   const fiadoEl = document.querySelector('.stat-red');
   const totalFiado = state.clientes.reduce((s, cl) => s + cl.divida, 0);
@@ -628,7 +606,6 @@ document.querySelector('.btn-success-lg').addEventListener('click', async () => 
   showToast(`${c.nome} pagou ${fmt(val)}`, 'success');
 });
 
-// --- HISTÓRICO — render (Dados do Histórico Real) ---
 function renderHistorico() {
   const list = document.querySelector('.comanda-list');
   list.innerHTML = '';
@@ -666,7 +643,6 @@ function renderHistorico() {
   });
 }
 
-/* Limpar histórico */
 document.querySelector('#view-historico .btn-ghost-danger').addEventListener('click', function () {
   pulse(this);
   state.historico = [];
@@ -674,17 +650,14 @@ document.querySelector('#view-historico .btn-ghost-danger').addEventListener('cl
   showToast('Histórico limpo', 'warning');
 });
 
-// --- INICIALIZAÇÃO — AGORA CARREGANDO TUDO REAL ---
 document.addEventListener('DOMContentLoaded', async () => {
-  // Carrega produtos reais do banco
+
   const produtosDoBanco = await Backend.produtos.listar();
   if (produtosDoBanco) state.produtos = produtosDoBanco;
 
-  // Carrega clientes reais do banco
   const clientesDoBanco = await Backend.clientes.listar();
   if (clientesDoBanco) state.clientes = clientesDoBanco;
 
-  // Carrega o Histórico real usando a sua rota nova
   try {
     const historicoDoBanco = await fetch('http://localhost:3000/api/historico').then(r => r.json());
     if (historicoDoBanco) state.historico = historicoDoBanco;
@@ -692,7 +665,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error("Histórico ainda vazio ou erro de conexão:", err);
   }
 
-  // Define os valores iniciais reais nos cards superiores dinamicamente
   const totalFiadoInicial = state.clientes.reduce((s, c) => s + c.divida, 0);
   const totalItensEstoque = state.produtos.reduce((s, p) => s + p.estoque, 0);
 
@@ -700,7 +672,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelector('.stat-red').dataset.val   = totalFiadoInicial;
   document.querySelector('.stat-amber').dataset.val = totalItensEstoque;
 
-  // Atualiza os textos iniciais na tela
   document.querySelector('.stat-green').textContent = fmt(state.caixaHoje);
   document.querySelector('.stat-red').textContent   = fmt(totalFiadoInicial);
   document.querySelector('.stat-amber').textContent = totalItensEstoque;
@@ -711,7 +682,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderCaderneta();
   renderHistorico();
 
-  /* Esconde toast estático inicial após 3s */
   const staticToast = document.querySelector('.toast-success');
   if (staticToast) {
     setTimeout(() => {
@@ -722,7 +692,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3000);
   }
 
-  /* Animação de entrada dos cards do header */
   document.querySelectorAll('.stat-card').forEach((card, i) => {
     card.style.opacity = '0';
     card.style.transform = 'translateY(-12px)';
@@ -733,7 +702,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }));
   });
 
-  /* Animação de entrada dos painéis */
   document.querySelectorAll('.panel').forEach((panel, i) => {
     panel.style.opacity = '0';
     panel.style.transform = 'translateY(16px)';
