@@ -48,7 +48,19 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   gap: 12px;
 }
 
-.brand-icon { font-size: 22px; }
+.brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.beer-3d {
+  width: 38px;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 0 10px rgba(245, 158, 11, 0.35));
+}
 
 .brand-name {
   font-size: 17px;
