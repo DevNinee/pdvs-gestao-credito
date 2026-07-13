@@ -1,5 +1,4 @@
-
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 
 async function chamarAPI(endpoint, metodo = 'GET', dados = null) {
   const configuracao = {

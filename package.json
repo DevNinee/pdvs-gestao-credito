@@ -5,8 +5,7 @@
   "main": "script.js",
   "scripts": {
     "start": "node backend/src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "npm rebuild sqlite3 --build-from-source"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -23,7 +22,6 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^6.0.1"
+    "pg": "^8.16.0"
   }
 }

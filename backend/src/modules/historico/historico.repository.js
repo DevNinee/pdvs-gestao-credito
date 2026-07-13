@@ -11,7 +11,7 @@ class HistoricoRepository {
 
             const venda = await tx.run(
                 `INSERT INTO historico (cliente_id, cliente_name, hora, total, tipo)
-                 VALUES (?, ?, ?, ?, ?)`,
+                 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
                 [clienteId || null, clienteNome || 'Avulso', horaAtual, total, tipo]
             );
             const historicoId = venda.lastID;
@@ -19,12 +19,12 @@ class HistoricoRepository {
             for (const item of itens) {
                 await tx.run(
                     `INSERT INTO historico_itens (historico_id, produto_id, descricao, quantidade, valor)
-                     VALUES (?, ?, ?, ?, ?)`,
+                     VALUES ($1, $2, $3, $4, $5)`,
                     [historicoId, item.produtoId || null, item.descricao, item.quantidade, item.valor]
                 );
 
                 if (item.produtoId) {
-                    const produto = await tx.get('SELECT estoque FROM produtos WHERE id = ?', [item.produtoId]);
+                    const produto = await tx.get('SELECT estoque FROM produtos WHERE id = $1', [item.produtoId]);
                     if (!produto) {
                         const erro = new Error(`Produto inexistente: ${item.descricao}`);
                         erro.status = 400;
@@ -38,14 +38,14 @@ class HistoricoRepository {
                         throw erro; 
                     }
                     await tx.run(
-                        'UPDATE produtos SET estoque = estoque - ? WHERE id = ?',
+                        'UPDATE produtos SET estoque = estoque - $1 WHERE id = $2',
                         [item.quantidade, item.produtoId]
                     );
                 }
             }
 
             if (tipo === 'fiado' && clienteId) {
-                await tx.run('UPDATE clientes SET divida = divida + ? WHERE id = ?', [total, clienteId]);
+                await tx.run('UPDATE clientes SET divida = divida + $1 WHERE id = $2', [total, clienteId]);
             }
 
             return { id: historicoId, total };

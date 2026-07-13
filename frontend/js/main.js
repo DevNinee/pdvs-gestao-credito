@@ -673,7 +673,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (clientesDoBanco) state.clientes = clientesDoBanco;
 
   try {
-    const historicoDoBanco = await fetch('http://localhost:3000/api/historico').then(r => r.json());
+    const historicoDoBanco = await fetch('/api/historico').then(r => r.json());
     if (historicoDoBanco) state.historico = historicoDoBanco;
   } catch (err) {
     console.error("Histórico ainda vazio ou erro de conexão:", err);
