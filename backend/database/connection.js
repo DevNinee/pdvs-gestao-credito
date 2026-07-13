@@ -1,13 +1,24 @@
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 const path = require('path');
+const fs = require('fs');
 
 const dbPromise = open({
   filename: path.join(__dirname, 'database.sqlite'),
   driver: sqlite3.Database
 });
 
-dbPromise.then((db) => db.run('PRAGMA foreign_keys = ON'));
+// Auto-inicializa as tabelas ao conectar (garante que o CRUD funciona no Render)
+dbPromise.then(async (db) => {
+  await db.run('PRAGMA foreign_keys = ON');
+
+  const schemaPath = path.join(__dirname, 'schema.sql');
+  if (fs.existsSync(schemaPath)) {
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+    await db.exec(schema);
+    console.log('[DB] Tabelas verificadas/criadas com sucesso.');
+  }
+});
 
 module.exports = {
   run: async (query, params) => {
