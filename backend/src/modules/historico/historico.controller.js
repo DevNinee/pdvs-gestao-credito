@@ -38,6 +38,15 @@ class HistoricoController {
             next(error);
         }
     }
+
+    async limparHistorico(req, res, next) {
+        try {
+            await HistoricoRepository.limparHistorico();
+            return res.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new HistoricoController();

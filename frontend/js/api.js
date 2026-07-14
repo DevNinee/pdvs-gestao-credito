@@ -37,7 +37,8 @@ const Backend = {
     deletar: (id) => chamarAPI(`/clientes/${id}`, 'DELETE')
   },
   historico: {
-    listar: () => chamarAPI('/historico')
+    listar: () => chamarAPI('/historico'),
+    limpar: () => chamarAPI('/historico', 'DELETE')
   }
 };
 

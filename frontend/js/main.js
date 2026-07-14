@@ -4,7 +4,7 @@ const state = {
   clientes: [], 
   historico: [], 
   carrinho: [],     
-  caixaHoje: 320.00,
+  caixaHoje: 0,
   editandoProduto: null,
   editandoCliente: null,
   quitandoCliente: null,
@@ -614,6 +614,11 @@ document.querySelector('.btn-success-lg').addEventListener('click', async () => 
   countUp(fiadoEl, oldFiado, totalFiado, '');
   fiadoEl.dataset.val = totalFiado;
 
+  const caixaEl = document.querySelector('.stat-green');
+  state.caixaHoje += val;
+  countUp(caixaEl, parseFloat(caixaEl.dataset.val || '0'), state.caixaHoje, '');
+  caixaEl.dataset.val = state.caixaHoje;
+
   closeModal('modal-quitar');
   renderCaderneta();
   renderClienteSelect();
@@ -657,11 +662,18 @@ function renderHistorico() {
   });
 }
 
-document.querySelector('#view-historico .btn-ghost-danger').addEventListener('click', function () {
-  pulse(this);
-  state.historico = [];
-  renderHistorico();
-  showToast('Histórico limpo', 'warning');
+document.querySelector('#view-historico .btn-ghost-danger').addEventListener('click', async function () {
+  if (confirm('Tem certeza que deseja limpar todo o histórico? Isso apagará todas as vendas registradas.')) {
+    pulse(this);
+    await Backend.historico.limpar();
+    state.historico = [];
+    state.caixaHoje = 0;
+    const caixaEl = document.querySelector('.stat-green');
+    caixaEl.dataset.val = '0';
+    caixaEl.textContent = fmt(0);
+    renderHistorico();
+    showToast('Histórico limpo com sucesso', 'warning');
+  }
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -674,7 +686,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const historicoDoBanco = await fetch('/api/historico').then(r => r.json());
-    if (historicoDoBanco) state.historico = historicoDoBanco;
+    if (historicoDoBanco) {
+      state.historico = historicoDoBanco;
+      state.caixaHoje = state.historico
+        .filter(h => h.tipo === 'pago')
+        .reduce((soma, h) => soma + h.total, 0);
+    }
   } catch (err) {
     console.error("Histórico ainda vazio ou erro de conexão:", err);
   }

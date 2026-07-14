@@ -55,6 +55,13 @@ class HistoricoRepository {
     async listarVendas() {
         return await db.all(`SELECT * FROM historico ORDER BY id DESC`);
     }
+
+    async limparHistorico() {
+        return db.transaction(async (tx) => {
+            await tx.run(`DELETE FROM historico_itens`);
+            await tx.run(`DELETE FROM historico`);
+        });
+    }
 }
 
 module.exports = new HistoricoRepository();
