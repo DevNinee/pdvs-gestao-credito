@@ -1,5 +1,14 @@
 const ClientesRepository = require('./clientes.repository');
+const HistoricoRepository = require('../historico/historico.repository');
 const { erroValidacao } = require('../../utils/erros');
+
+function validarId(id) {
+  const idNum = Number(id);
+  if (!Number.isInteger(idNum) || idNum <= 0) {
+    throw erroValidacao('Identificador inválido.');
+  }
+  return idNum;
+}
 
 function validarCliente({ nome, divida }) {
   const dividaNum = divida === undefined ? 0 : Number(divida);
@@ -34,7 +43,7 @@ class ClientesController {
 
   async atualizar(req, res, next) {
     try {
-      const { id } = req.params;
+      const id = validarId(req.params.id);
       const { nome, divida } = validarCliente(req.body);
       await ClientesRepository.atualizar(id, nome, divida);
       res.json({ id, nome, divida });
@@ -45,9 +54,20 @@ class ClientesController {
 
   async deletar(req, res, next) {
     try {
-      const { id } = req.params;
+      const id = validarId(req.params.id);
       await ClientesRepository.deletar(id);
       res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async pagarDivida(req, res, next) {
+    try {
+      const id = validarId(req.params.id);
+      const { valor } = req.body;
+      const resultado = await HistoricoRepository.registrarPagamento({ clienteId: id, valor });
+      res.status(201).json(resultado);
     } catch (err) {
       next(err);
     }

@@ -1,16 +1,43 @@
 
 const state = {
   produtos: [],
-  clientes: [], 
-  historico: [], 
-  carrinho: [],     
+  clientes: [],
+  historico: [],
+  carrinho: [],
   caixaHoje: 0,
   editandoProduto: null,
   editandoCliente: null,
   quitandoCliente: null,
 };
 
-const fmt = v => `R$ ${v.toFixed(2).replace('.', ',')}`;
+function arredonda(v) {
+  return Math.round((Number(v) + Number.EPSILON) * 100) / 100;
+}
+
+function ehHoje(dataISO) {
+  if (!dataISO) return false;
+  const d = new Date(dataISO);
+  const hoje = new Date();
+  return d.getFullYear() === hoje.getFullYear() &&
+    d.getMonth() === hoje.getMonth() &&
+    d.getDate() === hoje.getDate();
+}
+
+const fmt = v => `R$ ${arredonda(v).toFixed(2).replace('.', ',')}`;
+
+// Impede duplo-clique/duplo-submit: desabilita o elemento durante a
+// execução assíncrona do handler e reabilita ao final (sucesso ou erro).
+function protegerClique(el, handler) {
+  el.addEventListener('click', async (...args) => {
+    if (el.disabled) return;
+    el.disabled = true;
+    try {
+      await handler(...args);
+    } finally {
+      el.disabled = false;
+    }
+  });
+}
 
 function showToast(msg, tipo = 'success') {
   const container = document.querySelector('.toast-container');
@@ -139,7 +166,7 @@ tabs.forEach((tab, i) => {
 });
 
 function totalCarrinho() {
-  return state.carrinho.reduce((s, i) => s + i.preco * i.qty, 0);
+  return arredonda(state.carrinho.reduce((s, i) => s + i.preco * i.qty, 0));
 }
 
 function renderCarrinho() {
@@ -225,15 +252,21 @@ function montarItensVenda() {
   }));
 }
 
+function calcularCaixaHoje() {
+  return arredonda(state.historico
+    .filter(h => h.tipo === 'pago' && ehHoje(h.criado_em))
+    .reduce((soma, h) => soma + Number(h.total), 0));
+}
+
 async function recarregarDados() {
   const [produtos, clientes, historico] = await Promise.all([
     Backend.produtos.listar(),
     Backend.clientes.listar(),
     Backend.historico.listar()
   ]);
-  if (produtos) state.produtos = produtos;
-  if (clientes) state.clientes = clientes;
-  if (historico) state.historico = historico;
+  state.produtos = produtos;
+  state.clientes = clientes;
+  state.historico = historico;
 
   renderProdutoGrid();
   renderEstoque();
@@ -242,39 +275,29 @@ async function recarregarDados() {
   renderHistorico();
 
   const fiadoEl = document.querySelector('.stat-red');
-  const totalFiado = state.clientes.reduce((s, c) => s + c.divida, 0);
+  const totalFiado = arredonda(state.clientes.reduce((s, c) => s + Number(c.divida), 0));
   countUp(fiadoEl, parseFloat(fiadoEl.dataset.val || '0'), totalFiado, '');
   fiadoEl.dataset.val = totalFiado;
+
+  state.caixaHoje = calcularCaixaHoje();
+  const caixaEl = document.querySelector('.stat-green');
+  countUp(caixaEl, parseFloat(caixaEl.dataset.val || '0'), state.caixaHoje, '');
+  caixaEl.dataset.val = state.caixaHoje;
 
   atualizaStatEstoque();
 }
 
-document.querySelector('.btn-receive').addEventListener('click', async () => {
+protegerClique(document.querySelector('.btn-receive'), async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
   const total = totalCarrinho();
 
   const select = document.querySelector('.field-select');
-  const clienteNomeSelecionado = select.value.split(' —')[0].trim();
-  
-  let clienteId = null;
-  let clienteNome = 'Avulso';
-
-  if (!clienteNomeSelecionado.startsWith('—') && clienteNomeSelecionado) {
-    const cliente = state.clientes.find(c => c.nome === clienteNomeSelecionado);
-    if (cliente) {
-      clienteId = cliente.id;
-      clienteNome = cliente.nome;
-    }
-  }
+  const clienteId = select.value ? Number(select.value) : null;
+  const cliente = clienteId ? state.clientes.find(c => c.id === clienteId) : null;
+  const clienteNome = cliente ? cliente.nome : 'Avulso';
 
   try {
-
     await registrarVenda({ clienteId, clienteNome, tipo: 'pago', itens: montarItensVenda() });
-
-    state.caixaHoje += total;
-    const caixaEl = document.querySelector('.stat-green');
-    countUp(caixaEl, parseFloat(caixaEl.dataset.val || '0'), state.caixaHoje, '');
-    caixaEl.dataset.val = state.caixaHoje;
 
     state.carrinho = [];
     await recarregarDados();
@@ -285,25 +308,25 @@ document.querySelector('.btn-receive').addEventListener('click', async () => {
   }
 });
 
-document.querySelector('.btn-fiado').addEventListener('click', async () => {
+protegerClique(document.querySelector('.btn-fiado'), async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
-  const select = document.querySelector('.field-select');
-  const clienteNome = select.value.split(' —')[0].trim();
-  if (clienteNome.startsWith('—') || !clienteNome) return showToast('Selecione um cliente para fiado', 'error');
 
-  const cliente = state.clientes.find(c => c.nome === clienteNome);
+  const select = document.querySelector('.field-select');
+  const clienteId = select.value ? Number(select.value) : null;
+  if (!clienteId) return showToast('Selecione um cliente para fiado', 'error');
+
+  const cliente = state.clientes.find(c => c.id === clienteId);
   if (!cliente) return showToast('Cliente não encontrado', 'error');
 
   const total = totalCarrinho();
 
   try {
-
     await registrarVenda({ clienteId: cliente.id, clienteNome: cliente.nome, tipo: 'fiado', itens: montarItensVenda() });
 
     state.carrinho = [];
     await recarregarDados();
     renderCarrinho();
-    showToast(`Pendurado para ${clienteNome}: ${fmt(total)}`, 'warning');
+    showToast(`Pendurado para ${cliente.nome}: ${fmt(total)}`, 'warning');
   } catch (erro) {
     showToast(erro.message, 'error');
   }
@@ -311,15 +334,24 @@ document.querySelector('.btn-fiado').addEventListener('click', async () => {
 
 function renderClienteSelect() {
   const select = document.querySelector('.field-select');
-  const val = select.value;
-  select.innerHTML = `<option>— Venda Avulsa (sem cadastro) —</option>`;
+  const idAnterior = select.value;
+  select.innerHTML = '';
+
+  const optAvulsa = document.createElement('option');
+  optAvulsa.value = '';
+  optAvulsa.textContent = '— Venda Avulsa (sem cadastro) —';
+  select.appendChild(optAvulsa);
+
   state.clientes.forEach(c => {
     const opt = document.createElement('option');
-    opt.value = c.nome + (c.divida > 0 ? ` — Deve ${fmt(c.divida)}` : '');
-    opt.textContent = opt.value;
-    if (opt.value.startsWith(val.split(' —')[0])) opt.selected = true;
+    opt.value = c.id;
+    opt.textContent = c.nome + (c.divida > 0 ? ` — Deve ${fmt(c.divida)}` : '');
     select.appendChild(opt);
   });
+
+  if ([...select.options].some(o => o.value === idAnterior)) {
+    select.value = idAnterior;
+  }
 }
 
 function renderEstoque() {
@@ -367,20 +399,16 @@ function renderEstoque() {
   });
 
   wrap.querySelectorAll('.btn-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
+    protegerClique(btn, async () => {
       const id = parseInt(btn.dataset.id);
-      const row = btn.closest('.table-row');
-      row.style.transition = 'opacity 0.18s, transform 0.18s, max-height 0.22s';
-      row.style.opacity = '0';
-      row.style.transform = 'translateX(20px)';
-      row.style.maxHeight = '0';
-      row.style.overflow = 'hidden';
-      setTimeout(() => {
-        Backend.produtos.deletar(id);
+      try {
+        await Backend.produtos.deletar(id);
         state.produtos = state.produtos.filter(p => p.id !== id);
         renderEstoque();
         showToast('Produto removido do banco', 'error');
-      }, 220);
+      } catch (erro) {
+        showToast(erro.message, 'error');
+      }
     });
   });
 }
@@ -447,34 +475,47 @@ document.querySelector('#view-estoque .btn-primary').addEventListener('click', (
   openModal('modal-new-product');
 });
 
-document.querySelector('#modal-new-product .btn-primary').addEventListener('click', async () => {
+protegerClique(document.querySelector('#modal-new-product .btn-primary'), async () => {
   const m = document.getElementById('modal-new-product');
   const nome = m.querySelector('input[type="text"]').value.trim();
   const preco = parseFloat(m.querySelectorAll('input[type="number"]')[0].value) || 0;
   const estoque = parseInt(m.querySelectorAll('input[type="number"]')[1].value) || 0;
   if (!nome) return showToast('Informe o nome do produto', 'error');
 
-  const novoProduto = await Backend.produtos.criar({ nome, preco, estoque });
-  if (novoProduto) {
+  try {
+    const novoProduto = await Backend.produtos.criar({ nome, preco, estoque });
     state.produtos.push(novoProduto);
     closeModal('modal-new-product');
     renderEstoque();
-    showToast(`${nome} saved in database`, 'success');
+    showToast(`${nome} salvo com sucesso`, 'success');
+  } catch (erro) {
+    showToast(erro.message, 'error');
   }
 });
 
-document.querySelector('#modal-edit-product .btn-primary').addEventListener('click', async () => {
+protegerClique(document.querySelector('#modal-edit-product .btn-primary'), async () => {
   const m = document.getElementById('modal-edit-product');
   const p = state.editandoProduto;
-  p.nome    = m.querySelector('input[type="text"]').value.trim() || p.nome;
-  p.preco   = parseFloat(m.querySelectorAll('input[type="number"]')[0].value) || p.preco;
-  p.estoque = parseInt(m.querySelectorAll('input[type="number"]')[1].value) ?? p.estoque;
+  const nome    = m.querySelector('input[type="text"]').value.trim() || p.nome;
+  const preco   = parseFloat(m.querySelectorAll('input[type="number"]')[0].value);
+  const estoque = parseInt(m.querySelectorAll('input[type="number"]')[1].value);
 
-  await Backend.produtos.atualizar(p.id, { nome: p.nome, preco: p.preco, estoque: p.estoque });
+  try {
+    await Backend.produtos.atualizar(p.id, {
+      nome,
+      preco: isNaN(preco) ? p.preco : preco,
+      estoque: isNaN(estoque) ? p.estoque : estoque
+    });
+    p.nome = nome;
+    if (!isNaN(preco)) p.preco = preco;
+    if (!isNaN(estoque)) p.estoque = estoque;
 
-  closeModal('modal-edit-product');
-  renderEstoque();
-  showToast('Produto atualizado no banco', 'success');
+    closeModal('modal-edit-product');
+    renderEstoque();
+    showToast('Produto atualizado no banco', 'success');
+  } catch (erro) {
+    showToast(erro.message, 'error');
+  }
 });
 
 function atualizaStatEstoque() {
@@ -548,21 +589,17 @@ function renderCaderneta() {
   });
 
   list.querySelectorAll('.btn-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
+    protegerClique(btn, async () => {
       const id = parseInt(btn.dataset.id);
-      const card = btn.closest('.client-card');
-      card.style.transition = 'opacity 0.18s, transform 0.18s, max-height 0.22s';
-      card.style.opacity = '0';
-      card.style.transform = 'translateX(20px)';
-      card.style.maxHeight = '0';
-      card.style.overflow = 'hidden';
-      setTimeout(async () => {
+      try {
         await Backend.clientes.deletar(id);
         state.clientes = state.clientes.filter(c => c.id !== id);
         renderCaderneta();
         renderClienteSelect();
         showToast('Cliente removido do banco', 'error');
-      }, 220);
+      } catch (erro) {
+        showToast(erro.message, 'error');
+      }
     });
   });
 }
@@ -572,57 +609,57 @@ document.querySelector('#view-caderneta .btn-primary').addEventListener('click',
   openModal('modal-new-client');
 });
 
-document.querySelector('#modal-new-client .btn-primary').addEventListener('click', async () => {
+protegerClique(document.querySelector('#modal-new-client .btn-primary'), async () => {
   const nome = document.querySelector('#modal-new-client .field-input').value.trim();
   if (!nome) return showToast('Informe o nome do cliente', 'error');
 
-  const novoCliente = await Backend.clientes.criar({ nome, divida: 0 });
-  if (novoCliente) {
+  try {
+    const novoCliente = await Backend.clientes.criar({ nome, divida: 0 });
     state.clientes.push(novoCliente);
     closeModal('modal-new-client');
     renderCaderneta();
     renderClienteSelect();
     showToast(`${nome} cadastrado com sucesso!`, 'success');
+  } catch (erro) {
+    showToast(erro.message, 'error');
   }
 });
 
-document.querySelector('#modal-edit-client .btn-primary').addEventListener('click', async () => {
+protegerClique(document.querySelector('#modal-edit-client .btn-primary'), async () => {
   const c = state.editandoCliente;
   const m = document.getElementById('modal-edit-client');
-  c.nome   = m.querySelectorAll('.field-input')[0].value.trim() || c.nome;
-  c.divida = parseFloat(m.querySelectorAll('.field-input')[1].value) || 0;
+  const nome = m.querySelectorAll('.field-input')[0].value.trim() || c.nome;
+  const divida = parseFloat(m.querySelectorAll('.field-input')[1].value);
 
-  await Backend.clientes.atualizar(c.id, { nome: c.nome, divida: c.divida });
+  try {
+    await Backend.clientes.atualizar(c.id, { nome, divida: isNaN(divida) ? c.divida : divida });
+    c.nome = nome;
+    if (!isNaN(divida)) c.divida = divida;
 
-  closeModal('modal-edit-client');
-  renderCaderneta();
-  renderClienteSelect();
-  showToast('Cliente atualizado no banco', 'success');
+    closeModal('modal-edit-client');
+    renderCaderneta();
+    renderClienteSelect();
+    showToast('Cliente atualizado no banco', 'success');
+  } catch (erro) {
+    showToast(erro.message, 'error');
+  }
 });
 
-document.querySelector('.btn-success-lg').addEventListener('click', async () => {
+protegerClique(document.querySelector('.btn-success-lg'), async () => {
   const c = state.quitandoCliente;
-  const val = parseFloat(document.querySelector('#modal-quitar .field-input').value) || 0;
-  c.divida = Math.max(0, c.divida - val);
+  const val = arredonda(parseFloat(document.querySelector('#modal-quitar .field-input').value) || 0);
 
-  await Backend.clientes.atualizar(c.id, { nome: c.nome, divida: c.divida });
-  await registrarVenda({ clienteId: c.id, clienteNome: c.nome, tipo: 'pago', itens: [{descricao: 'Pagamento de Fiado', quantidade: 1, valor: val}] });
+  if (val <= 0) return showToast('Informe um valor de pagamento válido', 'error');
+  if (val > c.divida) return showToast(`Valor maior que a dívida (${fmt(c.divida)})`, 'error');
 
-  const fiadoEl = document.querySelector('.stat-red');
-  const totalFiado = state.clientes.reduce((s, cl) => s + cl.divida, 0);
-  const oldFiado = parseFloat(fiadoEl.dataset.val || '57.5');
-  countUp(fiadoEl, oldFiado, totalFiado, '');
-  fiadoEl.dataset.val = totalFiado;
-
-  const caixaEl = document.querySelector('.stat-green');
-  state.caixaHoje += val;
-  countUp(caixaEl, parseFloat(caixaEl.dataset.val || '0'), state.caixaHoje, '');
-  caixaEl.dataset.val = state.caixaHoje;
-
-  closeModal('modal-quitar');
-  renderCaderneta();
-  renderClienteSelect();
-  showToast(`${c.nome} pagou ${fmt(val)}`, 'success');
+  try {
+    await Backend.clientes.pagarDivida(c.id, val);
+    await recarregarDados();
+    closeModal('modal-quitar');
+    showToast(`${c.nome} pagou ${fmt(val)}`, 'success');
+  } catch (erro) {
+    showToast(erro.message, 'error');
+  }
 });
 
 function renderHistorico() {
@@ -663,7 +700,11 @@ function renderHistorico() {
 }
 
 document.querySelector('#view-historico .btn-ghost-danger').addEventListener('click', async function () {
-  if (confirm('Tem certeza que deseja limpar todo o histórico? Isso apagará todas as vendas registradas.')) {
+  if (this.disabled) return;
+  if (!confirm('Tem certeza que deseja limpar todo o histórico? Isso apagará todas as vendas registradas.')) return;
+
+  this.disabled = true;
+  try {
     pulse(this);
     await Backend.historico.limpar();
     state.historico = [];
@@ -673,30 +714,39 @@ document.querySelector('#view-historico .btn-ghost-danger').addEventListener('cl
     caixaEl.textContent = fmt(0);
     renderHistorico();
     showToast('Histórico limpo com sucesso', 'warning');
+  } catch (erro) {
+    showToast(erro.message, 'error');
+  } finally {
+    this.disabled = false;
+  }
+});
+
+// Ao voltar para a aba (ex.: outro dispositivo/aba registrou uma venda
+// enquanto esta ficou em segundo plano), busca o estado real do servidor
+// para evitar operar sobre dados desatualizados.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    recarregarDados().catch(err => console.error('Falha ao sincronizar dados:', err));
   }
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-
-  const produtosDoBanco = await Backend.produtos.listar();
-  if (produtosDoBanco) state.produtos = produtosDoBanco;
-
-  const clientesDoBanco = await Backend.clientes.listar();
-  if (clientesDoBanco) state.clientes = clientesDoBanco;
-
   try {
-    const historicoDoBanco = await fetch('/api/historico').then(r => r.json());
-    if (historicoDoBanco) {
-      state.historico = historicoDoBanco;
-      state.caixaHoje = state.historico
-        .filter(h => h.tipo === 'pago')
-        .reduce((soma, h) => soma + h.total, 0);
-    }
-  } catch (err) {
-    console.error("Histórico ainda vazio ou erro de conexão:", err);
+    const [produtos, clientes, historico] = await Promise.all([
+      Backend.produtos.listar(),
+      Backend.clientes.listar(),
+      Backend.historico.listar()
+    ]);
+    state.produtos = produtos;
+    state.clientes = clientes;
+    state.historico = historico;
+    state.caixaHoje = calcularCaixaHoje();
+  } catch (erro) {
+    showToast('Não foi possível carregar os dados do servidor.', 'error');
+    console.error('Falha ao carregar dados iniciais:', erro);
   }
 
-  const totalFiadoInicial = state.clientes.reduce((s, c) => s + c.divida, 0);
+  const totalFiadoInicial = arredonda(state.clientes.reduce((s, c) => s + Number(c.divida), 0));
   const totalItensEstoque = state.produtos.reduce((s, p) => s + p.estoque, 0);
 
   document.querySelector('.stat-green').dataset.val = state.caixaHoje;

@@ -5,11 +5,17 @@ const path = require('path');
 const produtosRoutes = require('./modules/produtos/produtos.routes');
 const clientesRoutes = require('./modules/clientes/clientes.routes');
 const errorHandler = require('./middlewares/errorHandler');
+const autenticacao = require('./middlewares/auth');
 
 const app = express();
 
+if (!process.env.APP_PASSWORD) {
+  console.warn('[AVISO] APP_PASSWORD não configurada: a aplicação está acessível sem senha para quem tiver a URL.');
+}
+
 app.use(cors());
 app.use(express.json());
+app.use(autenticacao);
 
 app.use(express.static(path.join(__dirname, '../../frontend')));
 

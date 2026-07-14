@@ -12,15 +12,25 @@ async function chamarAPI(endpoint, metodo = 'GET', dados = null) {
     configuracao.body = JSON.stringify(dados);
   }
 
+  let resposta;
   try {
-    const resposta = await fetch(`${API_URL}${endpoint}`, configuracao);
-    if (!resposta.ok) throw new Error('Erro na comunicação com o servidor');
-    return await resposta.json();
+    resposta = await fetch(`${API_URL}${endpoint}`, configuracao);
   } catch (erro) {
-    console.error('Falha na API:', erro);
-
-    return null;
+    console.error('Falha de rede na API:', erro);
+    throw new Error('Não foi possível conectar ao servidor. Verifique sua internet.');
   }
+
+  if (resposta.status === 204) return null;
+
+  const corpo = await resposta.json().catch(() => null);
+
+  if (!resposta.ok) {
+    const mensagem = (corpo && corpo.error) || 'Erro na comunicação com o servidor';
+    console.error('Falha na API:', mensagem);
+    throw new Error(mensagem);
+  }
+
+  return corpo;
 }
 
 const Backend = {
@@ -34,7 +44,8 @@ const Backend = {
     listar: () => chamarAPI('/clientes'),
     criar: (cliente) => chamarAPI('/clientes', 'POST', cliente),
     atualizar: (id, cliente) => chamarAPI(`/clientes/${id}`, 'PUT', cliente),
-    deletar: (id) => chamarAPI(`/clientes/${id}`, 'DELETE')
+    deletar: (id) => chamarAPI(`/clientes/${id}`, 'DELETE'),
+    pagarDivida: (id, valor) => chamarAPI(`/clientes/${id}/pagamentos`, 'POST', { valor })
   },
   historico: {
     listar: () => chamarAPI('/historico'),
@@ -42,15 +53,6 @@ const Backend = {
   }
 };
 
-async function registrarVenda(venda) {
-  const resposta = await fetch(`${API_URL}/historico`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(venda)
-  });
-  const corpo = await resposta.json().catch(() => ({}));
-  if (!resposta.ok) {
-    throw new Error(corpo.error || 'Erro ao registrar a venda no servidor');
-  }
-  return corpo;
+function registrarVenda(venda) {
+  return chamarAPI('/historico', 'POST', venda);
 }

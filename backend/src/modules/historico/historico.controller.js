@@ -15,6 +15,9 @@ class HistoricoController {
             if (tipo === 'fiado' && !clienteId) {
                 throw erroValidacao('Venda fiado exige um cliente selecionado.');
             }
+            if (clienteId !== undefined && clienteId !== null && !Number.isInteger(Number(clienteId))) {
+                throw erroValidacao('Cliente inválido.');
+            }
             for (const item of itens) {
                 const qtd = Number(item.quantidade);
                 const valor = Number(item.valor);

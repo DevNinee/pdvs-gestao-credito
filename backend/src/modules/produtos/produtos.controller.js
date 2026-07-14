@@ -1,6 +1,14 @@
 const ProdutosRepository = require('./produtos.repository');
 const { erroValidacao } = require('../../utils/erros');
 
+function validarId(id) {
+  const idNum = Number(id);
+  if (!Number.isInteger(idNum) || idNum <= 0) {
+    throw erroValidacao('Identificador inválido.');
+  }
+  return idNum;
+}
+
 function validarProduto({ nome, preco, estoque }) {
   const precoNum = Number(preco);
   const estoqueNum = Number(estoque);
@@ -38,7 +46,7 @@ class ProdutosController {
 
   async atualizar(req, res, next) {
     try {
-      const { id } = req.params;
+      const id = validarId(req.params.id);
       const { nome, preco, estoque } = validarProduto(req.body);
       await ProdutosRepository.atualizar(id, nome, preco, estoque);
       res.json({ id, nome, preco, estoque });
@@ -49,7 +57,7 @@ class ProdutosController {
 
   async deletar(req, res, next) {
     try {
-      const { id } = req.params;
+      const id = validarId(req.params.id);
       await ProdutosRepository.deletar(id);
       res.status(204).send();
     } catch (err) {

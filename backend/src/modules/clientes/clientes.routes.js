@@ -6,5 +6,6 @@ router.get('/', ClientesController.listar);
 router.post('/', ClientesController.criar);
 router.put('/:id', ClientesController.atualizar);
 router.delete('/:id', ClientesController.deletar);
+router.post('/:id/pagamentos', ClientesController.pagarDivida);
 
 module.exports = router;
