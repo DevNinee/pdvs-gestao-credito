@@ -239,6 +239,7 @@ document.querySelector('.btn-ghost-danger').addEventListener('click', function (
   if (state.carrinho.length === 0) return;
   pulse(this);
   state.carrinho = [];
+  limparCampoClienteNovo();
   renderCarrinho();
   showToast('Comanda limpa', 'warning');
 });
@@ -287,19 +288,46 @@ async function recarregarDados() {
   atualizaStatEstoque();
 }
 
+// Resolve o cliente da venda atual: se houver um nome digitado no campo de
+// cliente novo, tem prioridade — reaproveita um cliente já cadastrado com
+// esse nome (case-insensitive) ou cria o cadastro na hora. Caso contrário,
+// usa o cliente escolhido no <select> (ou null para venda avulsa).
+async function resolverClienteVenda() {
+  const inputNovo = document.querySelector('.field-cliente-novo');
+  const nomeNovo = inputNovo.value.trim();
+
+  if (nomeNovo) {
+    const existente = state.clientes.find(c => c.nome.toLowerCase() === nomeNovo.toLowerCase());
+    if (existente) return existente;
+
+    const criado = await Backend.clientes.criar({ nome: nomeNovo, divida: 0 });
+    state.clientes.push(criado);
+    renderClienteSelect();
+    return criado;
+  }
+
+  const select = document.querySelector('.field-select');
+  const clienteId = select.value ? Number(select.value) : null;
+  return clienteId ? state.clientes.find(c => c.id === clienteId) : null;
+}
+
+function limparCampoClienteNovo() {
+  document.querySelector('.field-cliente-novo').value = '';
+}
+
 protegerClique(document.querySelector('.btn-receive'), async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
   const total = totalCarrinho();
 
-  const select = document.querySelector('.field-select');
-  const clienteId = select.value ? Number(select.value) : null;
-  const cliente = clienteId ? state.clientes.find(c => c.id === clienteId) : null;
-  const clienteNome = cliente ? cliente.nome : 'Avulso';
-
   try {
+    const cliente = await resolverClienteVenda();
+    const clienteId = cliente ? cliente.id : null;
+    const clienteNome = cliente ? cliente.nome : 'Avulso';
+
     await registrarVenda({ clienteId, clienteNome, tipo: 'pago', itens: montarItensVenda() });
 
     state.carrinho = [];
+    limparCampoClienteNovo();
     await recarregarDados();
     renderCarrinho();
     showToast(`Recebido: ${fmt(total)}`, 'success');
@@ -311,19 +339,15 @@ protegerClique(document.querySelector('.btn-receive'), async () => {
 protegerClique(document.querySelector('.btn-fiado'), async () => {
   if (state.carrinho.length === 0) return showToast('Carrinho vazio', 'error');
 
-  const select = document.querySelector('.field-select');
-  const clienteId = select.value ? Number(select.value) : null;
-  if (!clienteId) return showToast('Selecione um cliente para fiado', 'error');
-
-  const cliente = state.clientes.find(c => c.id === clienteId);
-  if (!cliente) return showToast('Cliente não encontrado', 'error');
-
-  const total = totalCarrinho();
-
   try {
+    const cliente = await resolverClienteVenda();
+    if (!cliente) return showToast('Selecione ou digite o nome de um cliente para fiado', 'error');
+
+    const total = totalCarrinho();
     await registrarVenda({ clienteId: cliente.id, clienteNome: cliente.nome, tipo: 'fiado', itens: montarItensVenda() });
 
     state.carrinho = [];
+    limparCampoClienteNovo();
     await recarregarDados();
     renderCarrinho();
     showToast(`Pendurado para ${cliente.nome}: ${fmt(total)}`, 'warning');
