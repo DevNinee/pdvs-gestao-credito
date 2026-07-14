@@ -20,6 +20,13 @@ async function chamarAPI(endpoint, metodo = 'GET', dados = null) {
     throw new Error('Não foi possível conectar ao servidor. Verifique sua internet.');
   }
 
+  if (resposta.status === 401) {
+    // Sessão expirada ou inexistente: manda de volta para o login em vez de
+    // só mostrar um toast de erro genérico.
+    window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    return new Promise(() => {});
+  }
+
   if (resposta.status === 204) return null;
 
   const corpo = await resposta.json().catch(() => null);

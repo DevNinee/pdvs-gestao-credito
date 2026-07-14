@@ -745,6 +745,15 @@ document.querySelector('#view-historico .btn-ghost-danger').addEventListener('cl
   }
 });
 
+protegerClique(document.querySelector('.btn-logout'), async () => {
+  try {
+    await chamarAPI('/logout', 'POST');
+  } catch (erro) {
+    // mesmo se a chamada falhar, ainda mandamos para o login
+  }
+  window.location.href = '/login';
+});
+
 // Ao voltar para a aba (ex.: outro dispositivo/aba registrou uma venda
 // enquanto esta ficou em segundo plano), busca o estado real do servidor
 // para evitar operar sobre dados desatualizados.
