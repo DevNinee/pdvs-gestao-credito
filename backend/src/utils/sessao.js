@@ -7,7 +7,12 @@ const DURACAO_MS = 1000 * 60 * 60 * 12; // 12 horas
 // O segredo de assinatura deriva da própria APP_PASSWORD, então não é
 // preciso configurar mais nenhuma variável de ambiente só para sessão.
 function getSegredo() {
-  return crypto.createHash('sha256').update(String(process.env.APP_PASSWORD || '')).digest();
+  const segredoConfigurado = process.env.APP_SESSION_SECRET;
+  if (segredoConfigurado) {
+    return Buffer.from(String(segredoConfigurado), 'utf8');
+  }
+
+  return crypto.scryptSync(String(process.env.APP_PASSWORD || ''), 'pdv-sessao', 32);
 }
 
 function criarToken() {
