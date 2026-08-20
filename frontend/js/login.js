@@ -1,9 +1,25 @@
 function destinoPosLogin() {
   const params = new URLSearchParams(window.location.search);
-  const destino = params.get('redirect');
-  if (destino && destino.startsWith('/') && !destino.startsWith('//') && !destino.startsWith('/api') && destino !== '/login') {
-    return destino;
+  const destinoRaw = params.get('redirect');
+  if (!destinoRaw) {
+    return '/';
   }
+
+  try {
+    const destino = new URL(destinoRaw, window.location.origin);
+    if (
+      destino.origin === window.location.origin &&
+      destino.pathname.startsWith('/') &&
+      !destino.pathname.startsWith('/api') &&
+      destino.pathname !== '/login' &&
+      destino.pathname !== '/login.html'
+    ) {
+      return `${destino.pathname}${destino.search}${destino.hash}`;
+    }
+  } catch (_) {
+    return '/';
+  }
+
   return '/';
 }
 
