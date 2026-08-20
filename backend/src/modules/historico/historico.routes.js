@@ -3,4 +3,5 @@ const router = express.Router();
 const HistoricoController = require('./historico.controller');
 router.post('/', HistoricoController.salvarVenda);
 router.get('/', HistoricoController.listarVendas);
+router.delete('/', HistoricoController.limparHistorico);
 module.exports = router;

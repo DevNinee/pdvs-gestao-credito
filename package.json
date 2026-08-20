@@ -8,7 +8,6 @@
   },
   "scripts": {
     "start": "node backend/src/server.js",
-    "db:init": "node backend/database/init.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,8 +24,8 @@
   "homepage": "https://github.com/DevNinee/pdvs-gestao-credito#readme",
   "dependencies": {
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^6.0.1"
+    "pg": "^8.16.0"
   }
 }
