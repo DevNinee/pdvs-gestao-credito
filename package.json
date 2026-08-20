@@ -2,8 +2,13 @@
   "name": "pdvs-gestao-credito",
   "version": "1.0.0",
   "description": "Sistema de PDV - Sistema de Gestão de Vendas e Controle de Crédito",
-  "main": "script.js",
+  "main": "backend/src/server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
+    "start": "node backend/src/server.js",
+    "db:init": "node backend/database/init.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,6 +26,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1"
   }
 }
